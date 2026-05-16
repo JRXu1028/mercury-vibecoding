@@ -14,7 +14,7 @@
 
 | 姓名 | GitHub 账号 |
 |---|---|
-| 徐佳睿 | @JRXu1028 | 
+| 徐佳睿 |  [@JRXu1028](https://github.com/JRXu1028)  | 
 
 ---
 
