@@ -16,6 +16,7 @@
 |---|---|
 | 徐佳睿 |  [@JRXu1028](https://github.com/JRXu1028)  | 
 | 刘烨铭 |  [@leafriel](https://github.com/leafriel)  | 
+| 曲馥诺 |  [@MagicNuo6](https://github.com/MagicNuo6)  | 
 
 ---
 
