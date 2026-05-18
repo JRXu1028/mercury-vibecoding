@@ -21,6 +21,7 @@
 | 朱宇瑄 |  [@amourlion](https://github.com/amourlion)  | 
 | 章可仲 |  [@7A6B7A](https://github.com/7A6B7A)  | 
 | 郑一钒 |  [@yifanzheng](https://github.com/KuriUni?tab=repositories)  | 
+| 陈岩松 |  [@LingXi-fur](https://github.com/LingXi-fur)  | 
 ---
 
 ## 作业要求功能
