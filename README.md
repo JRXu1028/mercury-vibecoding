@@ -23,6 +23,7 @@
 | 郑一钒 |  [@yifanzheng](https://github.com/KuriUni?tab=repositories)  | 
 | 陈岩松 |  [@LingXi-fur](https://github.com/LingXi-fur)  | 
 | 张笑铖 |  [@zxc1844](https://github.com/zxc1844)  | 
+| 黄博 | [@datieBB](https://github.com/datieBB) |
 ---
 
 ## 作业要求功能
