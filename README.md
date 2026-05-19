@@ -24,6 +24,7 @@
 | 陈岩松 |  [@LingXi-fur](https://github.com/LingXi-fur)  | 
 | 张笑铖 |  [@zxc1844](https://github.com/zxc1844)  | 
 | 黄博 | [@datieBB](https://github.com/datieBB) |
+| 李欣昊 | [@Se9mentree](https://github.com/Se9mentree) |
 ---
 
 ## 作业要求功能
