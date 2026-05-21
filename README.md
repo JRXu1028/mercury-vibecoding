@@ -10,6 +10,50 @@
 
 ---
 
+## 技术选型
+
+桌面端使用 **Electron**，前端使用 **Vue 3 + TypeScript**，后端逻辑运行在 **Electron Main Process** 中，使用 **Node.js + TypeScript** 实现，数据存储使用 **SQLite**。
+
+分层说明：
+
+- **Electron**：跨平台桌面壳
+- **Vue 3**：界面
+- **TypeScript**：前后端统一语言和类型
+- **Node.js**：主进程里的本地后端逻辑
+- **SQLite**：本地数据库
+
+| 层次 | 技术 | 用途 |
+|---|---|---|
+| 桌面壳 | Electron | 跨平台桌面应用运行时 |
+| 前端 | Vue 3 + TypeScript + Vite | 页面、组件、状态和类型约束 |
+| UI | Element Plus | 桌面端界面组件 |
+| 状态管理 | Pinia | 管理 Feed、文章、设置和 Agent 状态 |
+| 路由 | vue-router | 页面路由 |
+| 本地数据库 | SQLite + better-sqlite3 | 保存订阅源、文章、笔记、标签、LLM 用量 |
+| 本地配置 | electron-store | 保存主题、Provider 配置、API Key 等 |
+| Feed 解析 | rss-parser | 解析 RSS / Atom |
+| OPML | fast-xml-parser 或 xml2js | 导入导出订阅源 |
+| 正文提取 | @mozilla/readability + jsdom | 从网页 HTML 提取正文 |
+| 内容清洗 | DOMPurify + turndown | 清洗 HTML 并转换为 Markdown |
+| Markdown 渲染 | marked | 在阅读器中展示文章内容 |
+| LLM 调用 | openai SDK | 调用 OpenAI-compatible API |
+| 打包 | electron-builder | 生成 Windows / macOS / Linux 安装包 |
+
+---
+
+## 架构分层
+
+```text
+Mercury 桌面应用
+├── Renderer 前端：Vue 3 + TypeScript + Vite
+├── IPC 安全桥接：contextBridge
+├── Main Process 后端：Node.js + TypeScript
+├── 本地数据层：SQLite mercury.db + electron-store
+└── 打包发布：electron-builder
+```
+
+---
+
 ## 小组成员
 
 | 姓名 | GitHub 账号 |
@@ -27,15 +71,40 @@
 | 李欣昊 | [@Se9mentree](https://github.com/Se9mentree) |
 ---
 
+## 团队分工
+
+| 小组 | 成员 | 负责内容 | 交付标准 |
+|---|---|---|---|
+| Team A：Feed & 同步组 | 徐佳睿、刘烨铭、曲馥诺 | Feed 添加/删除、RSS / Atom 解析、OPML 导入导出、Feed 同步、文章列表 | 输入 RSS URL 后可以显示文章列表，并能同步更新 |
+| Team B：内容清洗 & 阅读组 | 周孙睿、朱宇瑄、章可仲 | 正文提取、HTML 清洗、Markdown 转换、Reader 阅读视图、主题和阅读样式 | 点击文章后可以看到清洗后的正文，并具有基本阅读体验 |
+| Team C：AI Agent 组 | 郑一钒、陈岩松、张笑铖 | LLM Provider 配置、连通性测试、Summary Agent、Translation Agent、Prompt 模板 | 配置模型后可以生成文章摘要和分段翻译 |
+| Team D：基础设施 & 集成组 | 黄博、李欣昊 | 项目脚手架、IPC、数据库、全局布局、打包、文档、演示材料 | 应用能稳定启动，各组模块能接入，最终可以打包演示 |
+
+### 协作角色
+
+| 角色 | 职责 |
+|---|---|
+| 项目负责人 | 控制范围、同步进度、组织汇报 |
+| 前端负责人 | 统一组件风格、页面结构、交互规范 |
+| 后端负责人 | 统一 IPC、数据库 schema、服务接口 |
+| 测试/集成负责人 | 负责最终联调、演示数据、打包检查 |
+
+---
+
 ## 作业要求功能
+
+### MVP 必做
 
 - Feed / OPML 解析
 - Feed 同步
-- 内容清洗：Cleaned HTML / Cleaned Markdown
 - 文章内容展示
+- 内容清洗：Cleaned HTML / Cleaned Markdown
 - Summary Agent
 - Translation Agent
 - LLM Providers
+
+### 加分功能
+
 - 多语言支持
 - 日志上报和调试工具
 - 大语言模型用量统计
@@ -56,34 +125,61 @@
 
 ## 项目计划
 
-### 第一阶段：需求分析与项目初始化
+### Week 1：项目骨架 + 最小闭环
 
-- 阅读 Mercury 项目
-- 整理功能需求
-- 确定技术栈
-- 初始化 GitHub 仓库
+- 搭建 Electron + Vue 3 + Vite + TypeScript
+- 建立 Main / Renderer / Preload 结构
+- 建立 SQLite `feeds`、`entries` 表
+- 封装 addFeed、listEntries IPC
+- 使用 `rss-parser` 解析一个真实 RSS 源
+- 实现侧边栏和文章列表页面
+- 里程碑：输入 RSS URL -> 保存订阅源 -> 显示文章标题列表
 
-### 第二阶段：基础功能开发
+### Week 2：Feed 同步 + 阅读器
 
-- 实现 Feed 添加与解析
-- 实现文章列表与正文展示
-- 实现本地数据库存储
-- 实现 OPML 导入导出
+- Feed 手动同步和定时同步
+- OPML 导入导出
+- 已读/未读/收藏状态
+- 正文提取与 HTML 清洗
+- HTML 转 Markdown 并缓存
+- Reader 阅读视图
+- 主题、字号、行距、暗色模式
+- 里程碑：完整跑通“订阅 -> 同步 -> 清洗 -> 阅读”
 
-### 第三阶段：AI 功能开发
+### Week 3：AI 摘要和翻译
 
-- 实现 LLM Provider 配置
-- 实现文章摘要
-- 实现文章翻译
-- 实现 AI 标签推荐
-- 统计模型调用用量
+- LLM Provider CRUD
+- Provider 连通性测试
+- Summary Agent
+- Translation Agent
+- 通过 IPC event 推送流式输出进度
+- 摘要和翻译面板 UI
+- LLM 调用错误处理
+- 里程碑：配置模型 -> 对文章生成摘要 -> 对文章分段翻译
 
-### 第四阶段：完善与展示
+### Week 4：加分功能和体验完善
 
-- 实现笔记和文摘导出
-- 完善标签管理
-- 补充日志与调试工具
-- 编写项目文档和展示材料
+- 笔记 CRUD
+- 单篇/多篇 Markdown 导出
+- 标签 CRUD 和文章关联
+- LLM 用量记录
+- 日志和错误提示
+- UI 细节优化
+
+### Week 5：测试、打包、汇报
+
+- Windows 本机测试
+- Linux / macOS 环境打包验证
+- 准备 5-10 个测试 RSS 源
+- 准备 2-3 个 LLM Provider 测试配置
+- 修复关键 Bug
+- README 和演示脚本
+- 汇报 PPT 和分工说明
+
+### Week 6：缓冲
+
+- 只修 Bug，不增加新功能
+- 确保最终演示稳定
 
 ---
 
