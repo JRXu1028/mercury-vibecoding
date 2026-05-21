@@ -75,10 +75,10 @@ Mercury 桌面应用
 
 | 小组 | 成员 | 负责内容 | 交付标准 |
 |---|---|---|---|
-| Team A：Feed & 同步组 | 徐佳睿、刘烨铭、曲馥诺 | Feed 添加/删除、RSS / Atom 解析、OPML 导入导出、Feed 同步、文章列表 | 输入 RSS URL 后可以显示文章列表，并能同步更新 |
-| Team B：内容清洗 & 阅读组 | 周孙睿、朱宇瑄、章可仲 | 正文提取、HTML 清洗、Markdown 转换、Reader 阅读视图、主题和阅读样式 | 点击文章后可以看到清洗后的正文，并具有基本阅读体验 |
-| Team C：AI Agent 组 | 郑一钒、陈岩松、张笑铖、李欣昊 | LLM Provider 配置、连通性测试、Summary Agent、Translation Agent、Prompt 模板、LLM 用量记录 | 配置模型后可以生成文章摘要和分段翻译 |
-| Team D：基础设施 & 集成组 | 黄博 | 项目脚手架、IPC 规范、数据库 schema、全局布局、打包配置、文档 | 应用能稳定启动，各组模块能接入，最终可以打包演示 |
+| Team A：Feed & 同步组 | 李欣昊、周孙睿、朱宇瑄 | Feed 添加/删除、RSS / Atom 解析、OPML 导入导出、Feed 同步、文章列表 | 输入 RSS URL 后可以显示文章列表，并能同步更新 |
+| Team B：内容清洗 & 阅读组 | 刘烨铭、郑一钒、章可仲 | 正文提取、HTML 清洗、Markdown 转换、Reader 阅读视图、主题和阅读样式 | 点击文章后可以看到清洗后的正文，并具有基本阅读体验 |
+| Team C：AI Agent 组 | 徐佳睿、曲馥诺、黄博、张笑铖 | LLM Provider 配置、连通性测试、Summary Agent、Translation Agent、Prompt 模板、LLM 用量记录 | 配置模型后可以生成文章摘要和分段翻译 |
+| Team D：基础设施 & 集成组 | 陈岩松 | 项目脚手架、IPC 规范、数据库 schema、全局布局、打包配置、文档 | 应用能稳定启动，各组模块能接入，最终可以打包演示 |
 
 
 ---
