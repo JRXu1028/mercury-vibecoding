@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node.js
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+data/*.db
+data/*.db-wal
+data/*.db-shm
+frontend/src/**/*.js
+frontend/src/**/*.vue.js

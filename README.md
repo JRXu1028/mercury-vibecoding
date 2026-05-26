@@ -175,6 +175,48 @@ Mercury 桌面应用
 
 ---
 
+## 当前启动方式（桌面应用）
+
+### 环境准备（目前是MacOS环境）
+
+在项目根目录执行：
+
+```bash
+cd /Users/a/Documents/Program/mercury/mercury-vibecoding
+npm install
+cd frontend && npm install && cd ..
+```
+
+### 开发模式启动（网页模式）
+
+该模式会同时启动：
+- Electron 主进程
+- Vite 前端开发服务器
+
+```bash
+cd /Users/a/Documents/Program/mercury/mercury-vibecoding
+npm run dev:desktop
+```
+
+### 构建并启动桌面应用
+
+```bash
+cd /Users/a/Documents/Program/mercury/mercury-vibecoding
+npm run build:desktop
+npm run start:desktop
+```
+
+### Team A 功能入口
+
+当前桌面应用中，Team A 已接入以下功能：
+- Feed 添加 / 删除
+- RSS / Atom 解析并展示文章列表
+- Feed 手动同步与定时自动同步
+- OPML 导入（文件选择、拖拽上传、文本粘贴）
+- OPML 导出（桌面保存对话框）
+
+---
+
 ## 开发记录
 
 | 日期 | 成员 | 内容 |
@@ -184,3 +226,4 @@ Mercury 桌面应用
 | 2026-05-21 | 全体成员 | 确定技术选型：Electron、Vue 3、TypeScript、Node.js、SQLite |
 | 2026-05-21 | 全体成员 | 完成团队分工调整：Team A 3 人、Team B 3 人、Team C 4 人、Team D 1 人 |
 | 2026-05-21 | 全体成员 | 更新第一周汇报材料和 README 项目计划 |
+| 2026-05-26 | Team A | 完成 Team A 当前阶段开发：落地 `feeds` / `entries` SQLite 数据表与 FeedService（添加、删除、列表、去重入库）、完成 RSS/Atom 解析与 OPML 导入导出并补充测试、实现三栏前端与 Feed 搜索/同步/OPML 交互、完成 Electron 桌面化改造（main + preload + IPC）。 |

@@ -1,0 +1,28 @@
+{
+  "name": "mercury-vibecoding",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "dev:server": "tsx src/demoServer.ts",
+    "dev:desktop": "npm run build && concurrently -k \"npm --prefix frontend run dev\" \"wait-on http://127.0.0.1:5173 && MERCURY_RENDERER_URL=http://127.0.0.1:5173 electron dist/electronMain.js\"",
+    "build": "tsc -p tsconfig.json",
+    "build:desktop": "npm run build && npm --prefix frontend run build",
+    "start:desktop": "electron dist/electronMain.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.31",
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.3",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.3"
+  }
+}
