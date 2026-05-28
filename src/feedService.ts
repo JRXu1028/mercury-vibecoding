@@ -22,6 +22,9 @@ interface EntryRow {
   title: string
   author: string | null
   summary: string | null
+  content_html: string | null
+  content_md: string | null
+  content_fetched_at: string | null
   published_at: string | null
   created_at: string
   updated_at: string
@@ -53,6 +56,9 @@ function toEntry(row: EntryRow): Entry {
     title: row.title,
     author: row.author,
     summary: row.summary,
+    contentHtml: row.content_html,
+    contentMd: row.content_md,
+    contentFetchedAt: row.content_fetched_at,
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -108,7 +114,7 @@ export class FeedService {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const rows = this.db.prepare(`
-      SELECT id, feed_id, guid, url, title, author, summary, published_at, created_at, updated_at
+      SELECT id, feed_id, guid, url, title, author, summary, content_html, content_md, content_fetched_at, published_at, created_at, updated_at
       FROM entries
       ${where}
       ORDER BY COALESCE(published_at, created_at) DESC

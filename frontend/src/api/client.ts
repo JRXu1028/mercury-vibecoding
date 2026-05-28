@@ -1,4 +1,4 @@
-import type { AddFeedResponse, EntryItem, FeedItem, SyncResponse } from '../types'
+import type { AddFeedResponse, EntryContent, EntryItem, FeedItem, SyncResponse } from '../types'
 
 const bridge = window.teamAApi
 
@@ -72,6 +72,18 @@ export const teamAApi = {
 
     const data = await request<{ entries: EntryItem[] }>(`/api/entries?${query.toString()}`)
     return data.entries
+  },
+
+  async getEntryContent(entryId: number, options?: { forceRefresh?: boolean }): Promise<EntryContent> {
+    if (bridge) {
+      return await bridge.getEntryContent(entryId, options)
+    }
+    const query = new URLSearchParams()
+    if (options?.forceRefresh) {
+      query.set('refresh', '1')
+    }
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    return await request<EntryContent>(`/api/entries/${entryId}/content${suffix}`)
   },
 
   async importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }> {

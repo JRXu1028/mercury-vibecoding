@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AppDatabase } from './database.js'
+import { ContentService } from './contentService.js'
 import { FeedService } from './feedService.js'
 import { OPMLService } from './opmlService.js'
 
@@ -18,6 +19,7 @@ const useDevServer = Boolean(process.env.MERCURY_RENDERER_URL)
 
 const database = new AppDatabase({ path: dbPath })
 const feedService = new FeedService(database)
+const contentService = new ContentService(database)
 const opmlService = new OPMLService(feedService)
 
 let mainWindow: BrowserWindow | null = null
@@ -95,6 +97,12 @@ function registerIpcHandlers(): void {
     return feedService.listEntries({
       feedId: payload.feedId,
       query: payload.q
+    })
+  })
+
+  ipcMain.handle('entry:content', async (_event: IpcMainInvokeEvent, payload: { entryId: number; forceRefresh?: boolean }) => {
+    return await contentService.getEntryContent(payload.entryId, {
+      forceRefresh: payload.forceRefresh
     })
   })
 

@@ -17,9 +17,21 @@ export interface Entry {
   title: string
   author: string | null
   summary: string | null
+  contentHtml: string | null
+  contentMd: string | null
+  contentFetchedAt: string | null
   publishedAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface EntryContent {
+  entryId: number
+  title: string
+  url: string
+  html: string
+  markdown: string
+  fetchedAt: string
 }
 
 export interface ParsedEntry {
