@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/cli.ts",
+    "dev:ai": "tsx src/ai/mockFlow.ts",
     "dev:server": "tsx src/demoServer.ts",
     "dev:desktop": "npm run build && concurrently -k \"npm --prefix frontend run dev\" \"wait-on http://127.0.0.1:5173 && MERCURY_RENDERER_URL=http://127.0.0.1:5173 electron dist/electronMain.js\"",
     "build": "tsc -p tsconfig.json",
