@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld('teamAApi', {
   importOpml: (content) => ipcRenderer.invoke('opml:import', { content }),
   exportOpml: () => ipcRenderer.invoke('opml:export'),
   openOpmlFile: () => ipcRenderer.invoke('opml:openFile'),
-  saveOpmlFile: (content) => ipcRenderer.invoke('opml:saveFile', { content })
+  saveOpmlFile: (content) => ipcRenderer.invoke('opml:saveFile', { content }),
+  summarizeEntry: (entryId, options) => ipcRenderer.invoke('ai:summarizeEntry', { entryId, ...options }),
+  translateEntry: (entryId, options) => ipcRenderer.invoke('ai:translateEntry', { entryId, ...options })
 })
