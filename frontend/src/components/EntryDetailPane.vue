@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { ChatLineRound, MagicStick, Refresh } from '@element-plus/icons-vue'
 import { teamAApi } from '../api/client'
-import type { EntryContent, EntryItem } from '../types'
+import type { EntryContent, EntryItem, SummaryResult, TranslationResult } from '../types'
 
 const props = defineProps<{
   entry: EntryItem | null
@@ -15,7 +15,13 @@ const readerTheme = ref<'light' | 'sepia' | 'dark'>('light')
 const activeView = ref<'reader' | 'markdown'>('reader')
 const fontSize = ref(17)
 const lineHeight = ref(1.7)
+const isSummarizing = ref(false)
+const isTranslating = ref(false)
+const aiErrorMessage = ref('')
+const summaryResult = ref<SummaryResult | null>(null)
+const translationResult = ref<TranslationResult | null>(null)
 let loadVersion = 0
+let aiVersion = 0
 
 function formatTime(value: string | null): string {
   if (!value) {
@@ -29,6 +35,8 @@ const readerStyle = computed(() => ({
   fontSize: `${fontSize.value}px`,
   lineHeight: String(lineHeight.value)
 }))
+
+const hasAiResult = computed(() => Boolean(summaryResult.value || translationResult.value || aiErrorMessage.value))
 
 async function loadContent(forceRefresh = false): Promise<void> {
   if (!props.entry) {
@@ -57,9 +65,72 @@ async function loadContent(forceRefresh = false): Promise<void> {
   }
 }
 
+async function summarizeEntry(): Promise<void> {
+  if (!props.entry) {
+    return
+  }
+
+  const version = ++aiVersion
+  isSummarizing.value = true
+  aiErrorMessage.value = ''
+  try {
+    const result = await teamAApi.summarizeEntry(props.entry.id, {
+      length: 'medium'
+    })
+    if (version === aiVersion) {
+      summaryResult.value = result
+    }
+  } catch (error) {
+    if (version === aiVersion) {
+      aiErrorMessage.value = error instanceof Error ? error.message : String(error)
+    }
+  } finally {
+    if (version === aiVersion) {
+      isSummarizing.value = false
+    }
+  }
+}
+
+async function translateEntry(): Promise<void> {
+  if (!props.entry) {
+    return
+  }
+
+  const version = ++aiVersion
+  isTranslating.value = true
+  aiErrorMessage.value = ''
+  try {
+    const result = await teamAApi.translateEntry(props.entry.id, {
+      targetLanguage: 'zh-CN',
+      bilingual: true
+    })
+    if (version === aiVersion) {
+      translationResult.value = result
+    }
+  } catch (error) {
+    if (version === aiVersion) {
+      aiErrorMessage.value = error instanceof Error ? error.message : String(error)
+    }
+  } finally {
+    if (version === aiVersion) {
+      isTranslating.value = false
+    }
+  }
+}
+
+function resetAiResults(): void {
+  aiVersion += 1
+  isSummarizing.value = false
+  isTranslating.value = false
+  aiErrorMessage.value = ''
+  summaryResult.value = null
+  translationResult.value = null
+}
+
 watch(
   () => props.entry?.id,
   () => {
+    resetAiResults()
     void loadContent(false)
   },
   { immediate: true }
@@ -109,6 +180,29 @@ watch(
         <el-input-number v-model="lineHeight" :min="1.4" :max="2.2" :step="0.1" size="small" controls-position="right" />
       </div>
 
+      <div class="ai-toolbar">
+        <el-button
+          type="primary"
+          plain
+          :icon="MagicStick"
+          :loading="isSummarizing"
+          :disabled="isTranslating"
+          @click="summarizeEntry"
+        >
+          AI Summary
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :icon="ChatLineRound"
+          :loading="isTranslating"
+          :disabled="isSummarizing"
+          @click="translateEntry"
+        >
+          AI Translation
+        </el-button>
+      </div>
+
       <el-scrollbar class="reader-scroll">
         <el-skeleton v-if="isLoading" :rows="8" animated />
 
@@ -139,8 +233,103 @@ watch(
           <p>{{ entry.summary || 'No summary in feed item.' }}</p>
         </div>
       </el-scrollbar>
+
+      <section v-if="hasAiResult" class="ai-result-area">
+        <el-alert
+          v-if="aiErrorMessage"
+          type="warning"
+          :title="aiErrorMessage"
+          show-icon
+          :closable="false"
+        />
+
+        <section v-if="summaryResult" class="ai-result-block">
+          <header>
+            <h2>AI Summary</h2>
+            <span>{{ summaryResult.providerId }} / {{ summaryResult.model }}</span>
+          </header>
+          <p>{{ summaryResult.summary }}</p>
+        </section>
+
+        <section v-if="translationResult" class="ai-result-block">
+          <header>
+            <h2>AI Translation</h2>
+            <span>{{ translationResult.providerId }} / {{ translationResult.model }}</span>
+          </header>
+          <div class="translation-segments">
+            <div
+              v-for="segment in translationResult.segments"
+              :key="segment.index"
+              class="translation-segment"
+            >
+              <p v-if="translationResult.bilingual" class="translation-source">{{ segment.source }}</p>
+              <p>{{ segment.translated || segment.error }}</p>
+            </div>
+          </div>
+        </section>
+      </section>
     </template>
 
     <el-empty v-else description="Select an entry" :image-size="88" />
   </section>
 </template>
+
+<style scoped>
+.ai-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.ai-result-area {
+  border-top: 1px solid var(--line);
+  max-height: 36%;
+  overflow: auto;
+  padding-top: 12px;
+}
+
+.ai-result-block {
+  max-width: 780px;
+  margin: 0 auto 12px;
+  padding: 0 26px;
+}
+
+.ai-result-block header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ai-result-block h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.ai-result-block span,
+.translation-source {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ai-result-block p {
+  margin: 0 0 10px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.translation-segment {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.translation-segment:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+</style>
