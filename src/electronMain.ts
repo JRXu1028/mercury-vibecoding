@@ -6,6 +6,13 @@ import { AppDatabase } from './database.js'
 import { ContentService } from './contentService.js'
 import { FeedService } from './feedService.js'
 import { OPMLService } from './opmlService.js'
+import { hasProvider, registerProvider } from './ai/providerRegistry.js'
+import { deepSeekProvider } from './ai/providers/deepSeekProvider.js'
+import { mockProvider } from './ai/providers/mockProvider.js'
+import { summarizeArticle } from './ai/summaryAgent.js'
+import { translateArticle } from './ai/translationAgent.js'
+import type { ArticleInput, SummaryOptions, TranslationOptions } from './ai/types.js'
+import type { EntryContent } from './models.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,9 +28,53 @@ const database = new AppDatabase({ path: dbPath })
 const feedService = new FeedService(database)
 const contentService = new ContentService(database)
 const opmlService = new OPMLService(feedService)
+const defaultTranslationTargetLanguage = 'zh-CN'
 
 let mainWindow: BrowserWindow | null = null
 let autoSyncTimer: NodeJS.Timeout | null = null
+
+type AiEntryBasePayload = {
+  entryId: number
+  forceRefreshContent?: boolean
+}
+
+type AiSummarizeEntryPayload = AiEntryBasePayload & SummaryOptions
+type AiTranslateEntryPayload = AiEntryBasePayload & Partial<TranslationOptions>
+
+function registerAiProviders(): void {
+  if (!hasProvider(mockProvider.id)) {
+    registerProvider(mockProvider)
+  }
+
+  if (!hasProvider(deepSeekProvider.id)) {
+    registerProvider(deepSeekProvider)
+  }
+}
+
+function toArticleInput(content: EntryContent): ArticleInput {
+  const contentMarkdown = content.markdown.trim()
+
+  if (!contentMarkdown) {
+    throw new Error(`Entry ${content.entryId} has no cleaned markdown content for AI processing.`)
+  }
+
+  return {
+    id: String(content.entryId),
+    title: content.title,
+    url: content.url,
+    source: 'entry-content',
+    language: 'unknown',
+    contentMarkdown
+  }
+}
+
+async function getArticleInputForEntry(payload: AiEntryBasePayload): Promise<ArticleInput> {
+  const content = await contentService.getEntryContent(payload.entryId, {
+    forceRefresh: payload.forceRefreshContent
+  })
+
+  return toArticleInput(content)
+}
 
 function getFeedsWithEntryCount(): Array<ReturnType<FeedService['listFeeds']>[number] & { entryCount: number }> {
   const counts = new Map<number, number>()
@@ -72,6 +123,8 @@ function createMainWindow(): BrowserWindow {
 }
 
 function registerIpcHandlers(): void {
+  registerAiProviders()
+
   ipcMain.handle('feed:list', async () => {
     return getFeedsWithEntryCount()
   })
@@ -103,6 +156,29 @@ function registerIpcHandlers(): void {
   ipcMain.handle('entry:content', async (_event: IpcMainInvokeEvent, payload: { entryId: number; forceRefresh?: boolean }) => {
     return await contentService.getEntryContent(payload.entryId, {
       forceRefresh: payload.forceRefresh
+    })
+  })
+
+  ipcMain.handle('ai:summarizeEntry', async (_event: IpcMainInvokeEvent, payload: AiSummarizeEntryPayload) => {
+    const article = await getArticleInputForEntry(payload)
+
+    return await summarizeArticle(article, {
+      language: payload.language,
+      length: payload.length,
+      providerId: payload.providerId,
+      model: payload.model
+    })
+  })
+
+  ipcMain.handle('ai:translateEntry', async (_event: IpcMainInvokeEvent, payload: AiTranslateEntryPayload) => {
+    const article = await getArticleInputForEntry(payload)
+
+    return await translateArticle(article, {
+      sourceLanguage: payload.sourceLanguage,
+      targetLanguage: payload.targetLanguage ?? defaultTranslationTargetLanguage,
+      bilingual: payload.bilingual,
+      providerId: payload.providerId,
+      model: payload.model
     })
   })
 
