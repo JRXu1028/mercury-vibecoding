@@ -28,11 +28,13 @@ src/ai/
   providers/
     mockProvider.ts
     deepSeekProvider.ts
+    openAICompatibleProvider.ts
   summaryAgent.ts
   translationAgent.ts
   mockArticle.ts
   mockFlow.ts
   deepSeekSmokeFlow.ts
+  openAICompatibleSmokeFlow.ts
 ```
 
 模块分为三层：
@@ -134,6 +136,28 @@ DeepSeek Provider 从环境变量读取配置：
 
 不要把真实 API Key 写入源码、文档、日志或提交脚本。
 
+## OpenAI-compatible Provider
+
+`src/ai/providers/openAICompatibleProvider.ts` 是通用 OpenAI-compatible Provider，用于接入兼容 `/chat/completions` 的模型服务，例如 ModelBest/Ali、OpenRouter 或官方 OpenAI Chat Completions。
+
+该 Provider 导出：
+
+- `OPENAI_COMPATIBLE_PROVIDER_ID`
+- `DEFAULT_OPENAI_COMPATIBLE_BASE_URL`
+- `DEFAULT_OPENAI_COMPATIBLE_MODEL`
+- `createOpenAICompatibleProvider()`
+- `openAICompatibleProvider`
+
+环境变量：
+
+- `OPENAI_COMPATIBLE_API_KEY`：必填
+- `OPENAI_COMPATIBLE_BASE_URL`：可选，默认 `https://api.openai.com/v1`
+- `OPENAI_COMPATIBLE_MODEL`：可选，默认 `gpt-4o-mini`
+- `OPENAI_COMPATIBLE_PROVIDER_ID`：可选，默认 `openai-compatible`
+- `OPENAI_COMPATIBLE_PROVIDER_NAME`：可选，仅用于 smoke flow 输出
+
+如果 `OPENAI_COMPATIBLE_BASE_URL` 已经是完整的 `/chat/completions` 地址，会直接使用；如果只是 base URL，会自动拼接 `/chat/completions`。
+
 ## Summary Agent 流程
 
 `summarizeArticle(article, options)` 执行流程：
@@ -186,6 +210,19 @@ npm run dev:ai:deepseek
 
 `dev:ai:deepseek` 使用较短的 smoke article 片段，以较低成本验证 Provider 注册、`testConnection`、摘要、翻译和结构化输出。
 
+如果要测试兼容 OpenAI Chat Completions 的第三方服务，例如 ModelBest/Ali 的 `gpt-5.5`：
+
+```powershell
+$env:OPENAI_COMPATIBLE_API_KEY="<your-api-key>"
+$env:OPENAI_COMPATIBLE_BASE_URL="https://llm-center.ali.modelbest.cn/llm/v1/chat/completions"
+$env:OPENAI_COMPATIBLE_MODEL="gpt-5.5"
+$env:OPENAI_COMPATIBLE_PROVIDER_ID="modelbest-gpt55"
+$env:OPENAI_COMPATIBLE_PROVIDER_NAME="ModelBest GPT-5.5 Provider"
+npm run dev:ai:openai-compatible
+```
+
+该脚本同样使用较短的 smoke article 片段，验证 provider 注册、`testConnection`、摘要、翻译和结构化输出。
+
 ## 统一导出
 
 `src/index.ts` 保留 Team A 原有导出，并追加 Team C 导出：
@@ -194,6 +231,7 @@ npm run dev:ai:deepseek
 - Provider registry
 - Mock Provider
 - DeepSeek Provider
+- OpenAI-compatible Provider
 - Summary Agent
 - Translation Agent
 
@@ -203,7 +241,7 @@ npm run dev:ai:deepseek
 
 第一版暂未包含：
 
-- OpenRouter 或本地模型 Provider
+- 本地模型 Provider
 - 持久化 API Key 存储或密钥管理 UI
 - Electron IPC handler
 - Renderer UI
@@ -239,4 +277,4 @@ npm run dev:ai:deepseek
 - `npm run build` 通过。
 - `npm run dev:ai` 成功输出 mock `SummaryResult` 和 `TranslationResult`。
 - `npm run dev:ai:deepseek` 成功调用真实 DeepSeek Provider，返回中文摘要和 5 个成功翻译段落。
-- 另外已临时注册 ModelBest/Ali OpenAI-compatible provider，使用 `gpt-5.5` 成功跑通同一套 Summary Agent 和 Translation Agent。该测试没有把 API Key 写入项目文件。
+- 已使用 ModelBest/Ali OpenAI-compatible endpoint 和 `gpt-5.5` 成功跑通同一套 Summary Agent 和 Translation Agent。该测试没有把 API Key 写入项目文件。
