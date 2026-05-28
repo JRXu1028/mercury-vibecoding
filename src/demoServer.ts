@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { URL } from 'node:url'
 import path from 'node:path'
 import { AppDatabase } from './database.js'
+import { ContentService } from './contentService.js'
 import { FeedService } from './feedService.js'
 import { OPMLService } from './opmlService.js'
 
@@ -12,6 +13,7 @@ const autoSyncIntervalMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '
 
 const database = new AppDatabase({ path: dbPath })
 const feedService = new FeedService(database)
+const contentService = new ContentService(database)
 const opmlService = new OPMLService(feedService)
 let autoSyncTimer: NodeJS.Timeout | null = null
 
@@ -127,6 +129,15 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
         query
       })
       sendJson(res, 200, { entries })
+      return
+    }
+
+    if (req.method === 'GET' && /^\/api\/entries\/\d+\/content$/.test(url.pathname)) {
+      const parts = url.pathname.split('/')
+      const entryId = Number(parts[3])
+      const forceRefresh = url.searchParams.get('refresh') === '1'
+      const content = await contentService.getEntryContent(entryId, { forceRefresh })
+      sendJson(res, 200, content)
       return
     }
 

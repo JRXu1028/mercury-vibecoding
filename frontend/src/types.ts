@@ -16,8 +16,20 @@ export interface EntryItem {
   title: string
   author: string | null
   summary: string | null
+  contentHtml: string | null
+  contentMd: string | null
+  contentFetchedAt: string | null
   publishedAt: string | null
   createdAt: string
+}
+
+export interface EntryContent {
+  entryId: number
+  title: string
+  url: string
+  html: string
+  markdown: string
+  fetchedAt: string
 }
 
 export interface AddFeedResponse {
@@ -37,6 +49,7 @@ export interface TeamABridgeApi {
   syncFeed(feedId: number): Promise<SyncResponse>
   syncAllFeeds(): Promise<Array<{ feedId: number; newEntryCount: number }>>
   listEntries(params: { feedId?: number; q?: string }): Promise<EntryItem[]>
+  getEntryContent(entryId: number, options?: { forceRefresh?: boolean }): Promise<EntryContent>
   importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }>
   exportOpml(): Promise<string>
   openOpmlFile(): Promise<{ filePath: string; content: string } | null>

@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('teamAApi', {
   syncFeed: (feedId) => ipcRenderer.invoke('feed:sync', { feedId }),
   syncAllFeeds: () => ipcRenderer.invoke('feed:syncAll'),
   listEntries: (params) => ipcRenderer.invoke('entry:list', params),
+  getEntryContent: (entryId, options) => ipcRenderer.invoke('entry:content', { entryId, ...options }),
   importOpml: (content) => ipcRenderer.invoke('opml:import', { content }),
   exportOpml: () => ipcRenderer.invoke('opml:export'),
   openOpmlFile: () => ipcRenderer.invoke('opml:openFile'),
