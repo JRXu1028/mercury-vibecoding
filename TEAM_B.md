@@ -152,7 +152,3 @@ Run all tests:
 ```bash
 npm test
 ```
-
-## Note
-
-This document follows the same structure as `TEAM_A.md` so each team has a comparable implementation note.
