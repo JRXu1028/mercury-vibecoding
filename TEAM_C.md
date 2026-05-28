@@ -118,6 +118,23 @@ Mock Provider 实现了 `LLMProvider`：
 
 Mock Provider 不发起真实网络请求，也不需要真实 API Key。
 
+## Mock 数据与演示入口
+
+`src/ai/mockArticle.ts` 提供了一条可复用的 `ArticleInput` mock 数据，内容基于本地 `repos/skillsbench-report.md` 压缩整理，适合后续 Team C 组员在没有 RSS 清洗结果、没有数据库、没有真实 API Key 的情况下直接验证摘要和翻译流程。
+
+`src/ai/mockFlow.ts` 会注册 Mock Provider，并使用这条 mock article 依次调用：
+
+- `summarizeArticle(...)`
+- `translateArticle(...)`
+
+推荐后续开发或改动 Agent 时先运行：
+
+```bash
+npm run dev:ai
+```
+
+如果输出中包含 `article`、`summaryResult` 和 `translationResult`，就说明 mock 数据、Provider 注册、Summary Agent 和 Translation Agent 的基础链路仍然可用。
+
 ## DeepSeek Provider
 
 `src/ai/providers/deepSeekProvider.ts` 导出：
