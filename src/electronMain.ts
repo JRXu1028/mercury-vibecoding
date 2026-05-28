@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import type { BrowserWindow as ElectronBrowserWindow, IpcMainInvokeEvent } from 'electron'
+import { createRequire } from 'node:module'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +17,8 @@ import type { EntryContent } from './models.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const require = createRequire(import.meta.url)
+const { app, BrowserWindow, dialog, ipcMain } = require('electron') as typeof import('electron')
 
 const dbPath = path.resolve(process.cwd(), 'data', 'mercury-vibecoding.db')
 const preloadPath = path.resolve(process.cwd(), 'electron', 'preload.cjs')
@@ -30,7 +33,7 @@ const contentService = new ContentService(database)
 const opmlService = new OPMLService(feedService)
 const defaultTranslationTargetLanguage = 'zh-CN'
 
-let mainWindow: BrowserWindow | null = null
+let mainWindow: ElectronBrowserWindow | null = null
 let autoSyncTimer: NodeJS.Timeout | null = null
 
 type AiEntryBasePayload = {
@@ -88,7 +91,7 @@ function getFeedsWithEntryCount(): Array<ReturnType<FeedService['listFeeds']>[nu
   }))
 }
 
-function createMainWindow(): BrowserWindow {
+function createMainWindow(): ElectronBrowserWindow {
   const window = new BrowserWindow({
     width: 1380,
     height: 900,

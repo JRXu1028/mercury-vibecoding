@@ -20,6 +20,7 @@ const isTranslating = ref(false)
 const aiErrorMessage = ref('')
 const summaryResult = ref<SummaryResult | null>(null)
 const translationResult = ref<TranslationResult | null>(null)
+const aiProviderId = ref<'mock' | 'deepseek'>('mock')
 let loadVersion = 0
 let aiVersion = 0
 
@@ -37,6 +38,14 @@ const readerStyle = computed(() => ({
 }))
 
 const hasAiResult = computed(() => Boolean(summaryResult.value || translationResult.value || aiErrorMessage.value))
+const cleanedMarkdown = computed(() => content.value?.markdown.trim() ?? '')
+const hasCleanedMarkdown = computed(() => cleanedMarkdown.value.length > 0)
+const aiContentMessage = '当前文章没有可用于 AI 处理的 cleaned Markdown，请刷新正文或换一篇文章。'
+const isAiActionDisabled = computed(() => isLoading.value || !hasCleanedMarkdown.value)
+const aiProviderOptions: Array<{ label: string; value: 'mock' | 'deepseek' }> = [
+  { label: 'Mock', value: 'mock' },
+  { label: 'DeepSeek', value: 'deepseek' }
+]
 
 async function loadContent(forceRefresh = false): Promise<void> {
   if (!props.entry) {
@@ -69,12 +78,17 @@ async function summarizeEntry(): Promise<void> {
   if (!props.entry) {
     return
   }
+  if (!hasCleanedMarkdown.value) {
+    aiErrorMessage.value = aiContentMessage
+    return
+  }
 
   const version = ++aiVersion
   isSummarizing.value = true
   aiErrorMessage.value = ''
   try {
     const result = await teamAApi.summarizeEntry(props.entry.id, {
+      providerId: aiProviderId.value,
       length: 'medium'
     })
     if (version === aiVersion) {
@@ -95,14 +109,19 @@ async function translateEntry(): Promise<void> {
   if (!props.entry) {
     return
   }
+  if (!hasCleanedMarkdown.value) {
+    aiErrorMessage.value = aiContentMessage
+    return
+  }
 
   const version = ++aiVersion
   isTranslating.value = true
   aiErrorMessage.value = ''
   try {
     const result = await teamAApi.translateEntry(props.entry.id, {
+      providerId: aiProviderId.value,
       targetLanguage: 'zh-CN',
-      bilingual: true
+      bilingual: false
     })
     if (version === aiVersion) {
       translationResult.value = result
@@ -135,6 +154,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch(aiProviderId, () => {
+  resetAiResults()
+})
 </script>
 
 <template>
@@ -181,12 +204,18 @@ watch(
       </div>
 
       <div class="ai-toolbar">
+        <el-segmented
+          v-model="aiProviderId"
+          :options="aiProviderOptions"
+          size="small"
+          class="ai-provider-switch"
+        />
         <el-button
           type="primary"
           plain
           :icon="MagicStick"
           :loading="isSummarizing"
-          :disabled="isTranslating"
+          :disabled="isTranslating || isAiActionDisabled"
           @click="summarizeEntry"
         >
           AI Summary
@@ -196,11 +225,17 @@ watch(
           plain
           :icon="ChatLineRound"
           :loading="isTranslating"
-          :disabled="isSummarizing"
+          :disabled="isSummarizing || isAiActionDisabled"
           @click="translateEntry"
         >
           AI Translation
         </el-button>
+        <span v-if="aiProviderId === 'deepseek'" class="ai-provider-hint">
+          DeepSeek 需要在启动桌面应用的 shell 中临时设置 DEEPSEEK_API_KEY。
+        </span>
+        <span v-if="content && !hasCleanedMarkdown" class="ai-provider-hint">
+          {{ aiContentMessage }}
+        </span>
       </div>
 
       <el-scrollbar class="reader-scroll">
@@ -282,6 +317,17 @@ watch(
   flex-wrap: wrap;
   border-top: 1px solid var(--line);
   padding-top: 10px;
+}
+
+.ai-provider-switch {
+  flex: 0 0 auto;
+}
+
+.ai-provider-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 420px;
 }
 
 .ai-result-area {

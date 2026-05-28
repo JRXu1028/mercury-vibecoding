@@ -9,7 +9,6 @@ import type {
   TranslationSegment,
 } from './types.js'
 
-const DEFAULT_TRANSLATION_MODEL = 'mock-translation-model'
 const DEFAULT_TRANSLATION_MAX_TOKENS = 2048
 
 interface TranslationSourceSegment {
@@ -172,11 +171,10 @@ export async function translateArticle(
   const contentMarkdown = normalizeArticleMarkdown(article)
   const sourceSegments = splitMarkdownIntoSourceSegments(contentMarkdown)
   const provider = getProvider(options.providerId)
-  const model = options.model ?? DEFAULT_TRANSLATION_MODEL
   const bilingual = options.bilingual ?? false
   let usage = createEmptyUsage()
   let responseProviderId = provider.id
-  let responseModel = model
+  let responseModel = options.model ?? 'provider-default'
 
   const segments: TranslationSegment[] = []
 
@@ -189,7 +187,7 @@ export async function translateArticle(
         sourceSegments.length,
       )
       const response = await provider.chat(messages, {
-        model,
+        model: options.model,
         temperature: 0.2,
         maxTokens: DEFAULT_TRANSLATION_MAX_TOKENS,
       })
