@@ -1,4 +1,14 @@
-import type { AddFeedResponse, EntryContent, EntryItem, FeedItem, SyncResponse } from '../types'
+import type {
+  AddFeedResponse,
+  EntryContent,
+  EntryItem,
+  FeedItem,
+  SummarizeEntryOptions,
+  SummaryResult,
+  SyncResponse,
+  TranslateEntryOptions,
+  TranslationResult
+} from '../types'
 
 const bridge = window.teamAApi
 
@@ -84,6 +94,20 @@ export const teamAApi = {
     }
     const suffix = query.toString() ? `?${query.toString()}` : ''
     return await request<EntryContent>(`/api/entries/${entryId}/content${suffix}`)
+  },
+
+  async summarizeEntry(entryId: number, options?: SummarizeEntryOptions): Promise<SummaryResult> {
+    if (bridge) {
+      return await bridge.summarizeEntry(entryId, options)
+    }
+    throw new Error('AI summary is only available in the desktop app.')
+  },
+
+  async translateEntry(entryId: number, options?: TranslateEntryOptions): Promise<TranslationResult> {
+    if (bridge) {
+      return await bridge.translateEntry(entryId, options)
+    }
+    throw new Error('AI translation is only available in the desktop app.')
   },
 
   async importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }> {
