@@ -1,0 +1,139 @@
+\documentclass[aspectratio=169,11pt]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+
+\title{Mercury Vibecoding\ \n第二周进展汇报（Team A）}
+\author{Team A：Feed \& 同步组}
+\institute{课程小组项目}
+\date{2026-05-28}
+
+\newcommand{\imgplaceholder}[2]{%
+  \begin{center}
+    \fcolorbox{gray!60}{gray!8}{%
+      \begin{minipage}[c][#2][c]{#1}
+        \centering
+        \vspace{0.5em}
+        {\large 图片占位符}\\[0.4em]
+        {\small （后续替换为实际截图）}
+      \end{minipage}%
+    }
+  \end{center}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{汇报提纲}
+\tableofcontents
+\end{frame}
+
+\section{本周目标与完成情况}
+\begin{frame}{本周目标（对齐 Team A 职责）}
+\begin{itemize}
+  \item 完成 Feed 添加/删除与 RSS/Atom 解析
+  \item 完成 OPML 导入/导出
+  \item 完成 Feed 同步（单源、全量、定时）
+  \item 打通文章列表展示闭环
+  \item 从本地网页联调升级为 Electron 桌面应用
+\end{itemize}
+\end{frame}
+
+\begin{frame}{本周交付结果（已完成）}
+\begin{itemize}
+  \item 数据层：落地 `feeds` / `entries` 表，支持去重写入（`feed_id + guid`）
+  \item 解析层：接入 `rss-parser`（RSS/Atom）和 `fast-xml-parser`（OPML）
+  \item 服务层：`FeedService`、`OPMLService`、同步流程与错误处理
+  \item 前端层：三栏 UI（订阅源 / 文章列表 / 详情）+ 搜索 + 导入导出交互
+  \item 桌面化：`Electron Main + Preload + IPC`，前端 API 改为 IPC 优先
+\end{itemize}
+\end{frame}
+
+\section{实现细节}
+\begin{frame}{技术架构（当前可演示版本）}
+\begin{center}
+\small
+用户操作
+\ $\downarrow$ \\
+Renderer（Vue 3 + TypeScript）
+\ $\downarrow$ IPC \\
+Main Process（Electron + Node.js）
+\ $\downarrow$ \\
+Feed/OPML Service
+\ $\downarrow$ \\
+SQLite（本地数据）
+\end{center}
+
+\vspace{0.5em}
+\begin{itemize}
+  \item 本地优先：无登录、无云端依赖
+  \item 跨平台基础：桌面壳已切换为 Electron
+\end{itemize}
+\end{frame}
+
+\begin{frame}{关键功能演示点}
+\begin{columns}[T,onlytextwidth]
+\column{0.52\textwidth}
+\begin{itemize}
+  \item 输入 RSS URL，添加 Feed
+  \item 展示文章列表并可搜索
+  \item 单源同步/全量同步
+  \item OPML 导入（文件/粘贴）
+  \item OPML 导出（桌面保存）
+\end{itemize}
+
+\column{0.46\textwidth}
+\imgplaceholder{0.95\linewidth}{0.48\textheight}
+\end{columns}
+\end{frame}
+
+\begin{frame}{界面与交互（桌面版）}
+\imgplaceholder{0.9\linewidth}{0.58\textheight}
+\vspace{0.4em}
+\begin{itemize}
+  \item 建议替换为：主界面三栏截图（含 Feed、Entry、Detail）
+\end{itemize}
+\end{frame}
+
+\section{质量与风险}
+\begin{frame}{验证结果与当前风险}
+\textbf{已验证：}
+\begin{itemize}
+  \item 后端构建通过，单元测试通过（Feed/Sync/OPML）
+  \item 前端构建通过，桌面应用可启动
+\end{itemize}
+
+\textbf{风险与待优化：}
+\begin{itemize}
+  \item 部分中文站点 Feed 源稳定性一般（限流/SSL 兼容）
+  \item 前端打包体积偏大（后续可做分包）
+  \item 需补充跨平台实机验证（Windows/Linux）
+\end{itemize}
+\end{frame}
+
+\section{下周计划}
+\begin{frame}{下周计划（Team A）}
+\begin{itemize}
+  \item 完善订阅源异常处理与重试策略
+  \item 增加更多 Feed 测试样例与导入容错用例
+  \item 协助 Team D 对接打包流程（electron-builder）
+  \item 与 Team B/C 联调接口，确保后续功能接入顺畅
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Q \& A}
+\begin{center}
+\Large 谢谢大家
+\end{center}
+\end{frame}
+
+\end{document}
