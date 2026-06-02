@@ -227,3 +227,4 @@ npm run start:desktop
 | 2026-05-21 | 全体成员 | 完成团队分工调整：Team A 3 人、Team B 3 人、Team C 4 人、Team D 1 人 |
 | 2026-05-21 | 全体成员 | 更新第一周汇报材料和 README 项目计划 |
 | 2026-05-26 | Team A | 完成 Team A 当前阶段开发：落地 `feeds` / `entries` SQLite 数据表与 FeedService（添加、删除、列表、去重入库）、完成 RSS/Atom 解析与 OPML 导入导出并补充测试、实现三栏前端与 Feed 搜索/同步/OPML 交互、完成 Electron 桌面化改造（main + preload + IPC）。 |
+| 2026-05-28 | Team B | 完成了文章正文抓取、Readability 提取、HTML 清洗、Markdown 转换与缓存，并接入右侧 Reader 阅读视图，支持主题、字号、行距和 Markdown 查看。|
