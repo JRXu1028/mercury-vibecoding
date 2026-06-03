@@ -134,7 +134,8 @@ CREATE TABLE tags (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   color TEXT,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
 -- entry_tags: 文章-标签多对多
@@ -264,7 +265,7 @@ npm run dist
 在终端中设置环境变量后启动应用：
 ```bash
 export DEEPSEEK_API_KEY=your-key
-open -a "Mercury Vibecoding"
+"/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
 ```
 
 ### 6.5 已知打包限制

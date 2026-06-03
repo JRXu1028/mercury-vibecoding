@@ -42,6 +42,7 @@ let tagsService: TagsService
 let usageService: UsageService
 let mainWindow: ElectronBrowserWindow | null = null
 let autoSyncTimer: NodeJS.Timeout | null = null
+let isSyncing = false
 
 type AiEntryBasePayload = {
   entryId: number
@@ -323,10 +324,15 @@ function registerIpcHandlers(): void {
       return null
     }
 
-    const content = await readFile(result.filePaths[0], 'utf8')
-    return {
-      filePath: result.filePaths[0],
-      content
+    try {
+      const content = await readFile(result.filePaths[0], 'utf8')
+      return {
+        filePath: result.filePaths[0],
+        content
+      }
+    } catch (error) {
+      logger.error('Failed to read OPML file', error)
+      return null
     }
   })
 
@@ -352,10 +358,18 @@ function registerIpcHandlers(): void {
 
 function startAutoSync(): void {
   autoSyncTimer = setInterval(() => {
-    void feedService.syncAllFeeds().catch((error) => {
-      const message = error instanceof Error ? error.message : String(error)
-      logger.warn(`Auto sync failed: ${message}`)
-    })
+    if (isSyncing) {
+      return
+    }
+    isSyncing = true
+    void feedService.syncAllFeeds()
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error)
+        logger.warn(`Auto sync failed: ${message}`)
+      })
+      .finally(() => {
+        isSyncing = false
+      })
   }, autoSyncIntervalMinutes * 60 * 1000)
 }
 

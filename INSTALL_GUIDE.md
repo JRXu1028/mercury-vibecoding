@@ -84,26 +84,26 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 
 ### 4.2 DeepSeek 模式
 
-1. 在终端中设置环境变量：
+1. 如果应用正在运行，先退出（Cmd+Q）
+2. 在终端中设置环境变量并启动应用：
    ```bash
    export DEEPSEEK_API_KEY=sk-your-deepseek-key
+   "/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
    ```
-2. 从同一终端启动应用：
-   ```bash
-   open -a "Mercury Vibecoding"    # macOS
-   ```
+   > 注意：不能使用 `open -a`，因为 macOS GUI 应用不会继承终端环境变量。必须直接启动应用二进制文件。
 3. 在应用中将 AI Provider 切换为 **DeepSeek**
 4. 点击 **AI Summary** 获取摘要，或 **AI Translation** 获取中文翻译
 
 ### 4.3 OpenAI-Compatible 模式
 
-1. 设置环境变量：
+1. 如果应用正在运行，先退出（Cmd+Q）
+2. 在终端中设置环境变量并启动应用：
    ```bash
    export OPENAI_COMPATIBLE_API_KEY=sk-your-key
    export OPENAI_COMPATIBLE_BASE_URL=https://your-api-endpoint/v1   # 可选
    export OPENAI_COMPATIBLE_MODEL=gpt-4o-mini                       # 可选
+   "/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
    ```
-2. 从同一终端启动应用
 3. 将 AI Provider 切换为 **openai-compatible**
 
 ### 4.4 阅读器工具栏

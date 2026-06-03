@@ -41,7 +41,7 @@ contextBridge.exposeInMainWorld('teamCApi', {
 })
 
 contextBridge.exposeInMainWorld('teamBApi', {
-  listNotes: (entryId) => ipcRenderer.invoke('notes:list', { entryId }),
+  listNotes: (entryId) => ipcRenderer.invoke('notes:list', entryId !== undefined ? { entryId } : {}),
   createNote: (entryId, content, title) => ipcRenderer.invoke('notes:create', { entryId, content, title }),
   updateNote: (noteId, fields) => ipcRenderer.invoke('notes:update', { noteId, ...fields }),
   deleteNote: (noteId) => ipcRenderer.invoke('notes:delete', { noteId }),
