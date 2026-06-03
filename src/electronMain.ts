@@ -150,7 +150,9 @@ function createMainWindow(): ElectronBrowserWindow {
 }
 
 function initServices(): void {
-  const dbPath = path.resolve(app.getPath('userData'), 'mercury-vibecoding.db')
+  const userDataPath = app.getPath('userData')
+  logger.setLogDir(path.resolve(userDataPath, 'logs'))
+  const dbPath = path.resolve(userDataPath, 'mercury-vibecoding.db')
   database = new AppDatabase({ path: dbPath })
   feedService = new FeedService(database)
   contentService = new ContentService(database)

@@ -32,18 +32,27 @@ function nowLocal(): string {
 }
 
 export class Logger {
-  private readonly logFilePath: string
+  private logFilePath: string | null = null
+  private logDirOption: string | null = null
   private readonly level: LogLevel
   private listeners = new Set<LogListener>()
+  private dirCreated = false
 
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? 'debug'
-
-    const dir = options.logDir ?? path.resolve(process.cwd(), 'logs')
+    this.logDirOption = options.logDir ?? null
     const file = options.fileName ?? 'mercury.log'
-    this.logFilePath = path.resolve(dir, file)
 
-    mkdirSync(dir, { recursive: true })
+    if (this.logDirOption) {
+      this.logFilePath = path.resolve(this.logDirOption, file)
+    }
+  }
+
+  /** Set or change the log directory. Used when app.getPath is available after ready. */
+  setLogDir(dir: string, fileName = 'mercury.log'): void {
+    this.logDirOption = dir
+    this.logFilePath = path.resolve(dir, fileName)
+    this.dirCreated = false
   }
 
   debug(message: string, details?: unknown): void {
@@ -66,6 +75,18 @@ export class Logger {
     this.listeners.add(listener)
     return () => {
       this.listeners.delete(listener)
+    }
+  }
+
+  private ensureDir(): void {
+    if (this.dirCreated || !this.logDirOption) {
+      return
+    }
+    try {
+      mkdirSync(this.logDirOption, { recursive: true })
+      this.dirCreated = true
+    } catch {
+      // Can't create log dir — file logging disabled.
     }
   }
 
@@ -93,6 +114,10 @@ export class Logger {
   }
 
   private writeToFile(entry: LogEntry): void {
+    if (!this.logFilePath) {
+      return
+    }
+    this.ensureDir()
     const formatted = this.formatEntry(entry)
     try {
       appendFileSync(this.logFilePath, `${formatted}\n`, 'utf8')
