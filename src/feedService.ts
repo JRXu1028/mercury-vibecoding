@@ -30,9 +30,7 @@ interface EntryRow {
   updated_at: string
 }
 
-function nowIso(): string {
-  return new Date().toISOString()
-}
+import { nowIso } from './utils.js'
 
 function toFeed(row: FeedRow): Feed {
   return {

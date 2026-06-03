@@ -22,4 +22,22 @@ describe('AppDatabase', () => {
     expect(database.connection.prepare('SELECT COUNT(*) AS count FROM feeds').get()).toEqual({ count: 0 })
     database.close()
   })
+
+  it('has all expected tables after migration', () => {
+    const database = new AppDatabase({ path: path.join(tmpDir, 'data', 'test.db') })
+
+    const tables = database.connection.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
+    ).all() as Array<{ name: string }>
+
+    const names = tables.map((t) => t.name)
+    expect(names).toContain('feeds')
+    expect(names).toContain('entries')
+    expect(names).toContain('llm_providers')
+    expect(names).toContain('llm_usage')
+    expect(names).toContain('notes')
+    expect(names).toContain('tags')
+    expect(names).toContain('entry_tags')
+    database.close()
+  })
 })

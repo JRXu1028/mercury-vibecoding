@@ -158,15 +158,31 @@ function resetAutoSyncTimer(): void {
   }, autoSyncIntervalMinutes.value * 60 * 1000)
 }
 
+let removeLogListener: (() => void) | null = null
+
 onMounted(() => {
   void initialLoad()
   resetAutoSyncTimer()
+
+  if (window.teamDApi) {
+    removeLogListener = window.teamDApi.onAppLog((entry) => {
+      if (entry.level === 'error') {
+        ElMessage.error(`[Main] ${entry.message}`)
+      } else if (entry.level === 'warn') {
+        ElMessage.warning(`[Main] ${entry.message}`)
+      }
+    })
+  }
 })
 
 onBeforeUnmount(() => {
   if (autoSyncTimer !== null) {
     window.clearInterval(autoSyncTimer)
     autoSyncTimer = null
+  }
+  if (removeLogListener !== null) {
+    removeLogListener()
+    removeLogListener = null
   }
 })
 </script>

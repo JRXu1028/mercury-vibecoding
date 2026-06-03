@@ -21,9 +21,7 @@ const turndown = new TurndownService({
   bulletListMarker: '-'
 })
 
-function nowIso(): string {
-  return new Date().toISOString()
-}
+import { nowIso } from './utils.js'
 
 function ensureOkResponse(response: Response, url: string): void {
   if (!response.ok) {

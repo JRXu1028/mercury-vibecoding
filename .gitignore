@@ -226,6 +226,8 @@ frontend/*.tsbuildinfo
 data/*.db
 data/*.db-wal
 data/*.db-shm
+logs/
+release/
 frontend/src/**/*.js
 frontend/src/**/*.vue.js
 

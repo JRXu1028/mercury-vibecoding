@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ChatLineRound, MagicStick, Refresh } from '@element-plus/icons-vue'
-import { teamAApi } from '../api/client'
+import { teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult } from '../types'
 
 const props = defineProps<{
@@ -58,7 +58,7 @@ async function loadContent(forceRefresh = false): Promise<void> {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const result = await teamAApi.getEntryContent(props.entry.id, { forceRefresh })
+    const result = await teamCApi.getEntryContent(props.entry.id, { forceRefresh })
     if (version === loadVersion) {
       content.value = result
     }
@@ -87,7 +87,7 @@ async function summarizeEntry(): Promise<void> {
   isSummarizing.value = true
   aiErrorMessage.value = ''
   try {
-    const result = await teamAApi.summarizeEntry(props.entry.id, {
+    const result = await teamCApi.summarizeEntry(props.entry.id, {
       providerId: aiProviderId.value,
       length: 'medium'
     })
@@ -118,7 +118,7 @@ async function translateEntry(): Promise<void> {
   isTranslating.value = true
   aiErrorMessage.value = ''
   try {
-    const result = await teamAApi.translateEntry(props.entry.id, {
+    const result = await teamCApi.translateEntry(props.entry.id, {
       providerId: aiProviderId.value,
       targetLanguage: 'zh-CN',
       bilingual: false

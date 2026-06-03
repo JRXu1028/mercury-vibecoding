@@ -3,14 +3,19 @@ import type {
   EntryContent,
   EntryItem,
   FeedItem,
+  NoteItem,
   SummarizeEntryOptions,
   SummaryResult,
   SyncResponse,
+  TagItem,
+  TagWithCount,
   TranslateEntryOptions,
   TranslationResult
 } from '../types'
 
-const bridge = window.teamAApi
+const bridgeA = window.teamAApi
+const bridgeB = window.teamBApi
+const bridgeC = window.teamCApi
 
 async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init)
@@ -27,16 +32,16 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise
 
 export const teamAApi = {
   async listFeeds(): Promise<FeedItem[]> {
-    if (bridge) {
-      return await bridge.listFeeds()
+    if (bridgeA) {
+      return await bridgeA.listFeeds()
     }
     const data = await request<{ feeds: FeedItem[] }>('/api/feeds')
     return data.feeds
   },
 
   async addFeed(url: string): Promise<AddFeedResponse> {
-    if (bridge) {
-      return await bridge.addFeed(url)
+    if (bridgeA) {
+      return await bridgeA.addFeed(url)
     }
     return await request<AddFeedResponse>('/api/feeds', {
       method: 'POST',
@@ -46,31 +51,31 @@ export const teamAApi = {
   },
 
   async removeFeed(feedId: number): Promise<void> {
-    if (bridge) {
-      await bridge.removeFeed(feedId)
+    if (bridgeA) {
+      await bridgeA.removeFeed(feedId)
       return
     }
     await request<{ ok: boolean }>(`/api/feeds/${feedId}`, { method: 'DELETE' })
   },
 
   async syncFeed(feedId: number): Promise<SyncResponse> {
-    if (bridge) {
-      return await bridge.syncFeed(feedId)
+    if (bridgeA) {
+      return await bridgeA.syncFeed(feedId)
     }
     return await request<SyncResponse>(`/api/feeds/${feedId}/sync`, { method: 'POST' })
   },
 
   async syncAllFeeds(): Promise<Array<{ feedId: number; newEntryCount: number }>> {
-    if (bridge) {
-      return await bridge.syncAllFeeds()
+    if (bridgeA) {
+      return await bridgeA.syncAllFeeds()
     }
     const data = await request<{ items: Array<{ feedId: number; newEntryCount: number }> }>('/api/sync-all', { method: 'POST' })
     return data.items
   },
 
   async listEntries(params: { feedId?: number; q?: string }): Promise<EntryItem[]> {
-    if (bridge) {
-      return await bridge.listEntries(params)
+    if (bridgeA) {
+      return await bridgeA.listEntries(params)
     }
     const query = new URLSearchParams()
     if (params.feedId !== undefined) {
@@ -84,9 +89,43 @@ export const teamAApi = {
     return data.entries
   },
 
+  async importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }> {
+    if (bridgeA) {
+      return await bridgeA.importOpml(content)
+    }
+    return await request('/api/opml/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    })
+  },
+
+  async exportOpml(): Promise<string> {
+    if (bridgeA) {
+      return await bridgeA.exportOpml()
+    }
+    return await request('/api/opml/export')
+  },
+
+  async openOpmlFile(): Promise<{ filePath: string; content: string } | null> {
+    if (!bridgeA) {
+      return null
+    }
+    return await bridgeA.openOpmlFile()
+  },
+
+  async saveOpmlFile(content: string): Promise<string | null> {
+    if (!bridgeA) {
+      return null
+    }
+    return await bridgeA.saveOpmlFile(content)
+  }
+}
+
+export const teamCApi = {
   async getEntryContent(entryId: number, options?: { forceRefresh?: boolean }): Promise<EntryContent> {
-    if (bridge) {
-      return await bridge.getEntryContent(entryId, options)
+    if (bridgeC) {
+      return await bridgeC.getEntryContent(entryId, options)
     }
     const query = new URLSearchParams()
     if (options?.forceRefresh) {
@@ -97,48 +136,123 @@ export const teamAApi = {
   },
 
   async summarizeEntry(entryId: number, options?: SummarizeEntryOptions): Promise<SummaryResult> {
-    if (bridge) {
-      return await bridge.summarizeEntry(entryId, options)
+    if (bridgeC) {
+      return await bridgeC.summarizeEntry(entryId, options)
     }
     throw new Error('AI summary is only available in the desktop app.')
   },
 
   async translateEntry(entryId: number, options?: TranslateEntryOptions): Promise<TranslationResult> {
-    if (bridge) {
-      return await bridge.translateEntry(entryId, options)
+    if (bridgeC) {
+      return await bridgeC.translateEntry(entryId, options)
     }
     throw new Error('AI translation is only available in the desktop app.')
+  }
+}
+
+export const teamBApi = {
+  async listNotes(entryId?: number): Promise<NoteItem[]> {
+    if (bridgeB) {
+      return await bridgeB.listNotes(entryId)
+    }
+    const query = entryId !== undefined ? `?entryId=${entryId}` : ''
+    const data = await request<{ notes: NoteItem[] }>(`/api/notes${query}`)
+    return data.notes
   },
 
-  async importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }> {
-    if (bridge) {
-      return await bridge.importOpml(content)
+  async createNote(entryId: number, content: string, title?: string): Promise<NoteItem> {
+    if (bridgeB) {
+      return await bridgeB.createNote(entryId, content, title)
     }
-    return await request('/api/opml/import', {
+    return await request<NoteItem>('/api/notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ entryId, content, title })
     })
   },
 
-  async exportOpml(): Promise<string> {
-    if (bridge) {
-      return await bridge.exportOpml()
+  async updateNote(noteId: number, fields: { title?: string | null; content?: string }): Promise<NoteItem> {
+    if (bridgeB) {
+      return await bridgeB.updateNote(noteId, fields)
     }
-    return await request('/api/opml/export')
+    return await request<NoteItem>(`/api/notes/${noteId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields)
+    })
   },
 
-  async openOpmlFile(): Promise<{ filePath: string; content: string } | null> {
-    if (!bridge) {
-      return null
+  async deleteNote(noteId: number): Promise<void> {
+    if (bridgeB) {
+      await bridgeB.deleteNote(noteId)
+      return
     }
-    return await bridge.openOpmlFile()
+    await request(`/api/notes/${noteId}`, { method: 'DELETE' })
   },
 
-  async saveOpmlFile(content: string): Promise<string | null> {
-    if (!bridge) {
-      return null
+  async listTags(): Promise<TagWithCount[]> {
+    if (bridgeB) {
+      return await bridgeB.listTags()
     }
-    return await bridge.saveOpmlFile(content)
+    const data = await request<{ tags: TagWithCount[] }>('/api/tags')
+    return data.tags
+  },
+
+  async createTag(name: string, color?: string): Promise<TagItem> {
+    if (bridgeB) {
+      return await bridgeB.createTag(name, color)
+    }
+    return await request<TagItem>('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color })
+    })
+  },
+
+  async updateTag(tagId: number, fields: { name?: string; color?: string | null }): Promise<TagItem> {
+    if (bridgeB) {
+      return await bridgeB.updateTag(tagId, fields)
+    }
+    return await request<TagItem>(`/api/tags/${tagId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields)
+    })
+  },
+
+  async deleteTag(tagId: number): Promise<void> {
+    if (bridgeB) {
+      await bridgeB.deleteTag(tagId)
+      return
+    }
+    await request(`/api/tags/${tagId}`, { method: 'DELETE' })
+  },
+
+  async addTagToEntry(entryId: number, tagId: number): Promise<void> {
+    if (bridgeB) {
+      await bridgeB.addTagToEntry(entryId, tagId)
+      return
+    }
+    await request(`/api/entries/${entryId}/tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tagId })
+    })
+  },
+
+  async removeTagFromEntry(entryId: number, tagId: number): Promise<void> {
+    if (bridgeB) {
+      await bridgeB.removeTagFromEntry(entryId, tagId)
+      return
+    }
+    await request(`/api/entries/${entryId}/tags/${tagId}`, { method: 'DELETE' })
+  },
+
+  async getTagsForEntry(entryId: number): Promise<TagItem[]> {
+    if (bridgeB) {
+      return await bridgeB.getTagsForEntry(entryId)
+    }
+    const data = await request<{ tags: TagItem[] }>(`/api/entries/${entryId}/tags`)
+    return data.tags
   }
 }
