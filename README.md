@@ -34,7 +34,6 @@
 | 前端 | Vue 3 + TypeScript + Vite | 页面、组件、状态和类型约束 |
 | UI | Element Plus | 桌面端界面组件 |
 | 状态管理 | Pinia | 管理 Feed、文章、设置和 Agent 状态 |
-| 路由 | vue-router | 页面路由 |
 | 本地数据库 | SQLite (node:sqlite) | 保存订阅源、文章、笔记、标签、LLM 用量 |
 | 本地配置 | SQLite llm_providers 表 | 保存 Provider 配置信息 |
 | Feed 解析 | rss-parser | 解析 RSS / Atom |
@@ -211,14 +210,12 @@ npm run build:desktop
 npm run start:desktop
 ```
 
-### Team A 功能入口
+### 各组已接入功能
 
-当前桌面应用中，Team A 已接入以下功能：
-- Feed 添加 / 删除
-- RSS / Atom 解析并展示文章列表
-- Feed 手动同步与定时自动同步
-- OPML 导入（文件选择、拖拽上传、文本粘贴）
-- OPML 导出（桌面保存对话框）
+- **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
+- **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（主题/字号/行距）
+- **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible 三种 Provider
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（6 张表）、25 个 IPC 通道、日志系统、Notes/Tags/Usage 后端服务、跨平台打包（Mac + Windows）
 
 ---
 
@@ -233,3 +230,5 @@ npm run start:desktop
 | 2026-05-21 | 全体成员 | 更新第一周汇报材料和 README 项目计划 |
 | 2026-05-26 | Team A | 完成 Team A 当前阶段开发：落地 `feeds` / `entries` SQLite 数据表与 FeedService（添加、删除、列表、去重入库）、完成 RSS/Atom 解析与 OPML 导入导出并补充测试、实现三栏前端与 Feed 搜索/同步/OPML 交互、完成 Electron 桌面化改造（main + preload + IPC）。 |
 | 2026-05-28 | Team B | 完成了文章正文抓取、Readability 提取、HTML 清洗、Markdown 转换与缓存，并接入右侧 Reader 阅读视图，支持主题、字号、行距和 Markdown 查看。|
+| 2026-06-01 | Team C | 完成 Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible 三种 LLM Provider 接入。 |
+| 2026-06-04 | Team D | 完成项目脚手架与 Electron 桌面化改造、SQLite 数据库 schema（6 张表 + 迁移）、25 个 IPC 通道与 contextBridge 桥接、日志系统、Notes/Tags/Usage 后端服务、跨平台 CI 自动构建与打包（macOS dmg + Windows exe）、安装指南文档。 |
