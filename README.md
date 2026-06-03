@@ -8,6 +8,17 @@
 
 项目定位：一个本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签功能的 RSS 阅读器。
 
+## 下载安装
+
+👉 [GitHub Release 页面](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
+
+| 平台 | 文件 | 安装方式 |
+|------|------|----------|
+| macOS (Apple Silicon) | `.dmg` | 双击打开 → 拖入 Applications |
+| macOS (Apple Silicon) | `.zip` | 解压 → 双击 `.app` |
+
+> 首次打开若提示"无法验证开发者"：右键点击应用 → "打开" → 确认即可。
+
 ---
 
 ## 技术选型

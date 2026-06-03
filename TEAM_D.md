@@ -12,25 +12,33 @@
 ┌─────────────────────────────────────────────────┐
 │  Renderer (Vue 3 + Vite + Element Plus + Pinia) │
 │  frontend/src/                                   │
-│  ├── App.vue                 全局3栏布局          │
+│  ├── App.vue                 全局3栏布局+日志通知  │
 │  ├── components/                                 │
 │  │   ├── FeedSidebar.vue     [Team A] 订阅源列表  │
 │  │   ├── EntryListPane.vue   [Team A] 文章列表    │
 │  │   └── EntryDetailPane.vue [Team B/C] 阅读+AI   │
 │  ├── stores/feed.ts          Pinia 全局状态       │
-│  ├── api/client.ts           API 客户端(双模式)   │
+│  ├── api/client.ts           API 客户端(四桥接)   │
 │  └── types.ts                前端类型定义          │
 ├─────────────────────────────────────────────────┤
 │  Preload (contextBridge)                         │
 │  electron/preload.cjs                            │
-│  暴露: window.teamAApi                           │
+│  暴露: window.teamAApi / teamBApi / teamCApi /   │
+│        teamDApi                                  │
 ├─────────────────────────────────────────────────┤
 │  Main Process (Electron + Node.js)               │
 │  src/                                            │
 │  ├── electronMain.ts         Electron 入口+IPC   │
 │  ├── demoServer.ts           HTTP 开发服务器      │
-│  ├── database.ts             SQLite 数据库        │
+│  ├── cli.ts                  CLI 交互式调试工具   │
+│  ├── index.ts                模块导出入口         │
+│  ├── database.ts             SQLite 数据库+迁移   │
 │  ├── models.ts               共享类型定义          │
+│  ├── utils.ts                共享工具(nowIso等)   │
+│  ├── logger.ts               [Team D] 统一日志    │
+│  ├── notesService.ts         [Team D] 笔记CRUD    │
+│  ├── tagsService.ts          [Team D] 标签CRUD    │
+│  ├── usageService.ts         [Team D] AI用量记录   │
 │  ├── feedService.ts          [Team A] Feed CRUD   │
 │  ├── feedParser.ts           [Team A] RSS 解析    │
 │  ├── contentService.ts       [Team B] 正文清洗    │
@@ -205,7 +213,7 @@ Electron 桌面模式下通过 `ipcRenderer.invoke` 通信；纯前端开发模�
 - EntryDetailPane (reader + AI summary/translation) → Team B + Team C
 - 全局状态 (selectedFeedId, selectedEntryId, searchText) → Pinia `useFeedStore`
 
-## 5. 启动方式
+## 5. 启动与开发
 
 ```bash
 # 纯前端开发 (HTTP 模式，不需 Electron)
@@ -219,7 +227,53 @@ npm run dev:desktop
 npm test
 ```
 
-## 6. 待办 (按优先级)
+## 6. 打包与发布
+
+### 6.1 打包命令
+
+```bash
+# 仅打包（不生成安装包，输出到 release/ 目录）
+npm run pack
+
+# 生成可分发安装包（dmg/zip/nsis/AppImage）
+npm run dist
+```
+
+### 6.2 打包配置 (package.json "build" 字段)
+
+- **macOS**: dmg + zip (Apple Silicon arm64)
+- **Windows**: nsis 安装包
+- **Linux**: AppImage + deb
+
+数据库路径使用 `app.getPath('userData')`，打包后数据存在用户目录而非应用包内，升级不丢数据。
+
+### 6.3 已发布版本
+
+| 版本 | 平台 | 下载链接 |
+|------|------|----------|
+| v0.1.0 | macOS arm64 | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
+
+### 6.4 用户安装说明
+
+**macOS**:
+1. 下载 `.dmg` → 双击打开 → 拖入 Applications
+2. 或下载 `.zip` → 解压 → 双击 `Mercury Vibecoding.app`
+3. 首次打开若提示"无法验证开发者"：右键点击应用 → "打开" → 确认
+
+**使用 DeepSeek AI**:
+在终端中设置环境变量后启动应用：
+```bash
+export DEEPSEEK_API_KEY=your-key
+open -a "Mercury Vibecoding"
+```
+
+### 6.5 已知打包限制
+
+- 当前仅打包了 macOS arm64 版本；Windows/Linux 需在对应平台执行 `npm run dist`
+- 未配置代码签名和公证 (notarization)，macOS 需手动绕过 Gatekeeper
+- 应用图标使用 Electron 默认图标，尚未配置自定义图标
+
+## 7. 待办 (按优先级)
 
 | 优先级 | 任务 | 状态 |
 |--------|------|------|
@@ -228,10 +282,13 @@ npm test
 | P1 | 统一日志系统 (Week 4) | ✅ 完成 |
 | P1 | 前端桥接 API 命名空间整理 | ✅ 完成 |
 | P1 | 主进程→渲染进程事件推送通道 | ✅ 完成 |
-| P2 | electron-builder 打包配置 (Week 5) | ✅ 完成 |
-| P2 | notes CRUD 服务 (Week 4 协作) | ✅ 完成 |
-| P2 | tags CRUD 服务 (Week 4 协作) | ✅ 完成 |
+| P2 | electron-builder 打包配置 | ✅ 完成 |
+| P2 | macOS arm64 打包发布 | ✅ 完成 |
+| P2 | notes CRUD 服务 | ✅ 完成 |
+| P2 | tags CRUD 服务 | ✅ 完成 |
 | P2 | AI 用量记录 + Provider 持久化 | ✅ 完成 |
 | P3 | API Key 持久化存储 | ⬜ 待做 |
 | P3 | notes/tags 前端 UI 组件 | ⬜ 待做 |
 | P3 | LLM 用量查询 IPC + 前端展示 | ⬜ 待做 |
+| P3 | Windows/Linux 打包发布 | ⬜ 待做 |
+| P3 | 应用图标 + 代码签名 | ⬜ 待做 |
