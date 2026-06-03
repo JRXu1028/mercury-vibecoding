@@ -37,7 +37,9 @@ export class NotesService {
     `).run(entryId, title ?? null, content, timestamp, timestamp)
 
     const row = this.db.prepare('SELECT last_insert_rowid() AS id').get() as { id: number }
-    return this.getById(row.id)!
+    const note = this.getById(row.id)
+    if (!note) throw new Error(`Failed to retrieve newly created note (id=${row.id})`)
+    return note
   }
 
   update(noteId: number, fields: { title?: string | null; content?: string }): Note {
@@ -58,7 +60,9 @@ export class NotesService {
       UPDATE notes SET ${sets.join(', ')} WHERE id = ?
     `).run(...params)
 
-    return this.getById(noteId)!
+    const note = this.getById(noteId)
+    if (!note) throw new Error(`Note not found (id=${noteId})`)
+    return note
   }
 
   delete(noteId: number): void {

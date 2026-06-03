@@ -161,7 +161,7 @@ CREATE TABLE entry_tags (
 | `opml:export` | R→M | - | `string` (OPML XML) | A | `teamAApi` |
 | `opml:openFile` | R→M | - | `{filePath,content}\|null` | A | `teamAApi` |
 | `opml:saveFile` | R→M | `{content}` | `string\|null` (路径) | A | `teamAApi` |
-| `entry:content` | R→M | `{entryId,forceRefresh?}` | `EntryContent` | B | `teamCApi` |
+| `entry:content` | R→M | `{entryId,forceRefresh?}` | `EntryContent` | B (服务) / C (桥接) | `teamCApi` |
 | `ai:summarizeEntry` | R→M | `{entryId,...SummaryOptions,forceRefreshContent?}` | `SummaryResult` | C | `teamCApi` |
 | `ai:translateEntry` | R→M | `{entryId,...TranslationOptions,forceRefreshContent?}` | `TranslationResult` | C | `teamCApi` |
 | `notes:list` | R→M | `{entryId?}` | `NoteItem[]` | D | `teamBApi` |

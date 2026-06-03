@@ -25,6 +25,14 @@ export interface LoggerOptions {
   fileName?: string
 }
 
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
 function nowLocal(): string {
   const d = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
@@ -141,7 +149,7 @@ export class Logger {
     if (entry.details !== undefined) {
       const detailsStr = entry.details instanceof Error
         ? `${entry.details.message}\n${entry.details.stack ?? ''}`
-        : JSON.stringify(entry.details)
+        : safeStringify(entry.details)
       return `${base} ${detailsStr}`
     }
     return base

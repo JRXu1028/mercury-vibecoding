@@ -148,6 +148,7 @@ export interface TagItem {
   name: string
   color: string | null
   createdAt: string
+  updatedAt: string | null
 }
 
 export interface TagWithCount extends TagItem {

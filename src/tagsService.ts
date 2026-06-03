@@ -16,7 +16,8 @@ function toTag(row: TagRow): Tag {
     id: row.id,
     name: row.name,
     color: row.color,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   }
 }
 
@@ -34,17 +35,19 @@ export class TagsService {
   createTag(name: string, color?: string): Tag {
     const timestamp = nowIso()
     this.db.prepare(`
-      INSERT INTO tags (name, color, created_at)
-      VALUES (?, ?, ?)
-    `).run(name, color ?? null, timestamp)
+      INSERT INTO tags (name, color, created_at, updated_at)
+      VALUES (?, ?, ?, ?)
+    `).run(name, color ?? null, timestamp, timestamp)
 
     const row = this.db.prepare('SELECT last_insert_rowid() AS id').get() as { id: number }
-    return this.getById(row.id)!
+    const tag = this.getById(row.id)
+    if (!tag) throw new Error(`Failed to retrieve newly created tag (id=${row.id})`)
+    return tag
   }
 
   updateTag(tagId: number, fields: { name?: string; color?: string | null }): Tag {
-    const sets: string[] = []
-    const params: Array<string | number | null> = []
+    const sets: string[] = ['updated_at = ?']
+    const params: Array<string | number | null> = [nowIso()]
 
     if (fields.name !== undefined) {
       sets.push('name = ?')
@@ -56,14 +59,18 @@ export class TagsService {
     }
 
     if (sets.length === 0) {
-      return this.getById(tagId)!
+      const tag = this.getById(tagId)
+      if (!tag) throw new Error(`Tag not found (id=${tagId})`)
+      return tag
     }
 
     this.db.prepare(`
       UPDATE tags SET ${sets.join(', ')} WHERE id = ?
     `).run(...params, tagId)
 
-    return this.getById(tagId)!
+    const tag = this.getById(tagId)
+    if (!tag) throw new Error(`Tag not found (id=${tagId})`)
+    return tag
   }
 
   deleteTag(tagId: number): void {
@@ -73,7 +80,7 @@ export class TagsService {
 
   getById(tagId: number): Tag | null {
     const row = this.db.prepare(`
-      SELECT id, name, color, created_at FROM tags WHERE id = ?
+      SELECT id, name, color, created_at, updated_at FROM tags WHERE id = ?
     `).get(tagId)
 
     return row ? toTag(asTagRow(row)) : null
@@ -81,7 +88,7 @@ export class TagsService {
 
   listTags(): TagWithCount[] {
     const rows = this.db.prepare(`
-      SELECT t.id, t.name, t.color, t.created_at,
+      SELECT t.id, t.name, t.color, t.created_at, t.updated_at,
              COUNT(et.entry_id) AS entry_count
       FROM tags t
       LEFT JOIN entry_tags et ON et.tag_id = t.id
@@ -109,7 +116,7 @@ export class TagsService {
 
   getTagsForEntry(entryId: number): Tag[] {
     const rows = this.db.prepare(`
-      SELECT t.id, t.name, t.color, t.created_at
+      SELECT t.id, t.name, t.color, t.created_at, t.updated_at
       FROM tags t
       JOIN entry_tags et ON et.tag_id = t.id
       WHERE et.entry_id = ?

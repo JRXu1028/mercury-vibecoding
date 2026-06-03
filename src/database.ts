@@ -94,7 +94,8 @@ export class AppDatabase {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         color TEXT,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS entry_tags (
@@ -114,6 +115,7 @@ export class AppDatabase {
     this.addColumnIfMissing('entries', 'content_html', 'TEXT')
     this.addColumnIfMissing('entries', 'content_md', 'TEXT')
     this.addColumnIfMissing('entries', 'content_fetched_at', 'TEXT')
+    this.addColumnIfMissing('tags', 'updated_at', 'TEXT')
   }
 
   private addColumnIfMissing(tableName: string, columnName: string, definition: string): void {

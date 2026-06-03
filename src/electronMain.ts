@@ -28,7 +28,8 @@ const { app, BrowserWindow, dialog, ipcMain } = require('electron') as typeof im
 const preloadPath = path.resolve(__dirname, '..', 'electron', 'preload.cjs')
 const rendererDevURL = process.env.MERCURY_RENDERER_URL ?? 'http://127.0.0.1:5173'
 const rendererProdIndex = path.resolve(__dirname, '..', 'frontend', 'dist', 'index.html')
-const autoSyncIntervalMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '10')
+const rawSyncMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '10')
+const autoSyncIntervalMinutes = Number.isFinite(rawSyncMinutes) && rawSyncMinutes > 0 ? rawSyncMinutes : 10
 const useDevServer = Boolean(process.env.MERCURY_RENDERER_URL)
 const defaultTranslationTargetLanguage = 'zh-CN'
 
@@ -350,10 +351,6 @@ function registerIpcHandlers(): void {
 }
 
 function startAutoSync(): void {
-  if (autoSyncIntervalMinutes <= 0) {
-    return
-  }
-
   autoSyncTimer = setInterval(() => {
     void feedService.syncAllFeeds().catch((error) => {
       const message = error instanceof Error ? error.message : String(error)

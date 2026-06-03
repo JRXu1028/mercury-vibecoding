@@ -35,14 +35,14 @@
 | UI | Element Plus | 桌面端界面组件 |
 | 状态管理 | Pinia | 管理 Feed、文章、设置和 Agent 状态 |
 | 路由 | vue-router | 页面路由 |
-| 本地数据库 | SQLite + better-sqlite3 | 保存订阅源、文章、笔记、标签、LLM 用量 |
-| 本地配置 | electron-store | 保存主题、Provider 配置、API Key 等 |
+| 本地数据库 | SQLite (node:sqlite) | 保存订阅源、文章、笔记、标签、LLM 用量 |
+| 本地配置 | SQLite llm_providers 表 | 保存 Provider 配置信息 |
 | Feed 解析 | rss-parser | 解析 RSS / Atom |
-| OPML | fast-xml-parser 或 xml2js | 导入导出订阅源 |
+| OPML | fast-xml-parser | 导入导出订阅源 |
 | 正文提取 | @mozilla/readability + jsdom | 从网页 HTML 提取正文 |
 | 内容清洗 | DOMPurify + turndown | 清洗 HTML 并转换为 Markdown |
-| Markdown 渲染 | marked | 在阅读器中展示文章内容 |
-| LLM 调用 | openai SDK | 调用 OpenAI-compatible API |
+| Markdown 展示 | 纯文本预览 | 在阅读器中展示 Markdown 原文 |
+| LLM 调用 | 原生 fetch (OpenAI-compatible) | 调用 OpenAI-compatible API |
 | 打包 | electron-builder | 生成 Windows / macOS / Linux 安装包 |
 
 ---
@@ -54,7 +54,7 @@ Mercury 桌面应用
 ├── Renderer 前端：Vue 3 + TypeScript + Vite
 ├── IPC 安全桥接：contextBridge
 ├── Main Process 后端：Node.js + TypeScript
-├── 本地数据层：SQLite mercury.db + electron-store
+├── 本地数据层：SQLite mercury-vibecoding.db
 └── 打包发布：electron-builder
 ```
 
@@ -183,31 +183,30 @@ Mercury 桌面应用
 
 ## 当前启动方式（桌面应用）
 
-### 环境准备（目前是MacOS环境）
+### 环境准备
+
+要求 Node.js 22+（项目使用 `node:sqlite` 实验性内置模块）。
 
 在项目根目录执行：
 
 ```bash
-cd /Users/a/Documents/Program/mercury/mercury-vibecoding
 npm install
-cd frontend && npm install && cd ..
+npm --prefix frontend install
 ```
 
-### 开发模式启动（网页模式）
+### 开发模式启动
 
 该模式会同时启动：
 - Electron 主进程
 - Vite 前端开发服务器
 
 ```bash
-cd /Users/a/Documents/Program/mercury/mercury-vibecoding
 npm run dev:desktop
 ```
 
 ### 构建并启动桌面应用
 
 ```bash
-cd /Users/a/Documents/Program/mercury/mercury-vibecoding
 npm run build:desktop
 npm run start:desktop
 ```

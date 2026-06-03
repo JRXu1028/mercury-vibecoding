@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "main": "dist/electronMain.js",
   "scripts": {
     "dev": "tsx src/cli.ts",
@@ -16,6 +19,8 @@
     "start:desktop": "electron dist/electronMain.js",
     "pack": "npm run build:desktop && electron-builder --dir",
     "dist": "npm run build:desktop && electron-builder",
+    "dist:win": "npm run build:desktop && electron-builder --win",
+    "dist:mac": "npm run build:desktop && electron-builder --mac",
     "test": "vitest run"
   },
   "dependencies": {

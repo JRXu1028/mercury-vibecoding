@@ -142,6 +142,8 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 
 ## 7. 开发者：从源码构建
 
+**前置要求**：Node.js 22+（项目使用 `node:sqlite` 实验性内置模块，低于 22 无法运行）。
+
 如需从源码构建或修改：
 
 ```bash
@@ -156,7 +158,7 @@ npm run dev:desktop
 # 打包
 npm run dist        # 当前平台
 npm run dist:win    # 仅 Windows
-npm run dist -- --mac  # 仅 macOS
+npm run dist:mac    # 仅 macOS
 
 # 运行测试
 npm test

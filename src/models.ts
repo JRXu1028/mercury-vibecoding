@@ -103,6 +103,7 @@ export interface Tag {
   name: string
   color: string | null
   createdAt: string
+  updatedAt: string | null
 }
 
 export interface TagRow {
@@ -110,4 +111,5 @@ export interface TagRow {
   name: string
   color: string | null
   created_at: string
+  updated_at: string | null
 }
