@@ -8,6 +8,7 @@ export interface AppDatabaseOptions {
 
 export class AppDatabase {
   private readonly db: DatabaseSync
+  private closed = false
 
   constructor(options: AppDatabaseOptions) {
     mkdirSync(path.dirname(options.path), { recursive: true })
@@ -18,6 +19,8 @@ export class AppDatabase {
   }
 
   close(): void {
+    if (this.closed) return
+    this.closed = true
     this.db.close()
   }
 
@@ -111,7 +114,10 @@ export class AppDatabase {
       CREATE INDEX IF NOT EXISTS idx_llm_usage_entry_id ON llm_usage(entry_id);
       CREATE INDEX IF NOT EXISTS idx_llm_usage_provider ON llm_usage(provider_id);
       CREATE INDEX IF NOT EXISTS idx_notes_entry_id ON notes(entry_id);
+      CREATE INDEX IF NOT EXISTS idx_entry_tags_tag_id ON entry_tags(tag_id);
     `)
+    // Incremental migrations for databases created before these columns existed.
+    // Must stay in sync with the CREATE TABLE definitions above.
     this.addColumnIfMissing('entries', 'content_html', 'TEXT')
     this.addColumnIfMissing('entries', 'content_md', 'TEXT')
     this.addColumnIfMissing('entries', 'content_fetched_at', 'TEXT')

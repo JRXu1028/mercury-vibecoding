@@ -58,12 +58,6 @@ export class TagsService {
       params.push(fields.color)
     }
 
-    if (sets.length === 0) {
-      const tag = this.getById(tagId)
-      if (!tag) throw new Error(`Tag not found (id=${tagId})`)
-      return tag
-    }
-
     this.db.prepare(`
       UPDATE tags SET ${sets.join(', ')} WHERE id = ?
     `).run(...params, tagId)

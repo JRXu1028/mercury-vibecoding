@@ -265,7 +265,6 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('notes:delete', async (_event: IpcMainInvokeEvent, payload: { noteId: number }) => {
     notesService.delete(payload.noteId)
-    return { ok: true }
   })
 
   ipcMain.handle('tags:list', async () => {
@@ -282,17 +281,14 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('tags:delete', async (_event: IpcMainInvokeEvent, payload: { tagId: number }) => {
     tagsService.deleteTag(payload.tagId)
-    return { ok: true }
   })
 
   ipcMain.handle('tags:addToEntry', async (_event: IpcMainInvokeEvent, payload: { entryId: number; tagId: number }) => {
     tagsService.addTagToEntry(payload.entryId, payload.tagId)
-    return { ok: true }
   })
 
   ipcMain.handle('tags:removeFromEntry', async (_event: IpcMainInvokeEvent, payload: { entryId: number; tagId: number }) => {
     tagsService.removeTagFromEntry(payload.entryId, payload.tagId)
-    return { ok: true }
   })
 
   ipcMain.handle('tags:getForEntry', async (_event: IpcMainInvokeEvent, payload: { entryId: number }) => {
@@ -388,7 +384,11 @@ function cleanupAndQuit(): void {
     autoSyncTimer = null
   }
   logger.info('App shutting down')
-  database.close()
+  try {
+    database.close()
+  } catch {
+    // Database may already be closed or unavailable.
+  }
 }
 
 app.whenReady().then(() => {
