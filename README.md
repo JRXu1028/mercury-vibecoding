@@ -12,12 +12,7 @@
 
 👉 [GitHub Release 页面](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
 
-| 平台 | 文件 | 安装方式 |
-|------|------|----------|
-| macOS (Apple Silicon) | `.dmg` | 双击打开 → 拖入 Applications |
-| macOS (Apple Silicon) | `.zip` | 解压 → 双击 `.app` |
-
-> 首次打开若提示"无法验证开发者"：右键点击应用 → "打开" → 确认即可。
+详细的安装步骤、使用指南和常见问题请参阅 **[INSTALL_GUIDE.md](INSTALL_GUIDE.md)**。
 
 ---
 

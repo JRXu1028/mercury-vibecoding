@@ -1,0 +1,163 @@
+# Mercury Vibecoding 安装与使用指南
+
+## 1. 下载
+
+前往 [GitHub Release 页面](https://github.com/JRXu1028/mercury-vibecoding/releases/latest) 下载对应平台的安装包。
+
+| 平台 | 下载文件 | 架构 |
+|------|----------|------|
+| macOS | `Mercury Vibecoding-0.1.0-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
+| Windows | `Mercury Vibecoding-0.1.0-setup.exe` | x64 |
+
+> Intel Mac 用户：当前仅提供 arm64 版本。如需 Intel 版本，请在 Intel Mac 上 `git clone` 后执行 `npm install && npm run dist`。
+
+---
+
+## 2. 安装
+
+### macOS
+
+**方式一：DMG 安装（推荐）**
+
+1. 双击下载的 `.dmg` 文件
+2. 在弹出的窗口中，将 `Mercury Vibecoding` 拖入右侧 `Applications` 文件夹
+3. 从启动台或 `Applications` 文件夹中打开应用
+
+**方式二：ZIP 解压**
+
+1. 双击 `.zip` 文件解压
+2. 将解压出的 `Mercury Vibecoding.app` 拖入 `Applications` 文件夹
+3. 双击打开
+
+**首次打开安全提示**
+
+macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding，因为无法验证开发者"。这是正常现象，解决方法：
+
+- **方法一**：右键点击应用 → 选择 "打开" → 在弹窗中点击 "打开"
+- **方法二**：前往 **系统设置 → 隐私与安全性** → 在底部找到被拦截的应用 → 点击 "仍要打开"
+
+### Windows
+
+1. 双击下载的 `.exe` 安装文件
+2. 如果 Windows 弹出 "Windows 已保护你的电脑" 提示，点击 "更多信息" → "仍要运行"
+3. 按安装向导提示完成安装
+4. 从桌面快捷方式或开始菜单启动
+
+---
+
+## 3. 基本使用
+
+### 3.1 添加 RSS 订阅源
+
+1. 启动应用后，点击左上角的 **+ Add Feed** 按钮
+2. 在弹出的输入框中粘贴 RSS 地址，例如：
+   - `https://sspai.com/feed`（少数派）
+   - `https://www.ruanyifeng.com/blog/atom.xml`（阮一峰）
+   - `https://feeds.appinn.com/appinns`（小众软件）
+3. 点击 **Add**，应用会自动抓取并显示文章列表
+
+### 3.2 阅读文章
+
+- **左侧栏**：显示所有订阅源，点击切换
+- **中间栏**：显示当前订阅源的文章列表，可搜索
+- **右侧栏**：显示选中的文章正文，自动清洗为可读格式
+
+### 3.3 同步
+
+- 点击工具栏的 **Sync** 按钮手动同步当前订阅源
+- 应用默认每 10 分钟自动同步所有订阅源
+- 可在顶部控制栏调整自动同步间隔或关闭
+
+### 3.4 OPML 导入/导出
+
+- **导入**：点击 **Import OPML** → 选择 `.opml` 文件或粘贴 XML 内容
+- **导出**：点击 **Export OPML** → 选择保存位置
+
+---
+
+## 4. AI 功能
+
+### 4.1 Mock 模式（默认，无需配置）
+
+- AI Provider 选择 **Mock** 时，摘要和翻译会返回模拟结果
+- 用于测试和体验界面流程，不需要任何 API Key
+
+### 4.2 DeepSeek 模式
+
+1. 在终端中设置环境变量：
+   ```bash
+   export DEEPSEEK_API_KEY=sk-your-deepseek-key
+   ```
+2. 从同一终端启动应用：
+   ```bash
+   open -a "Mercury Vibecoding"    # macOS
+   ```
+3. 在应用中将 AI Provider 切换为 **DeepSeek**
+4. 点击 **AI Summary** 获取摘要，或 **AI Translation** 获取中文翻译
+
+### 4.3 OpenAI-Compatible 模式
+
+1. 设置环境变量：
+   ```bash
+   export OPENAI_COMPATIBLE_API_KEY=sk-your-key
+   export OPENAI_COMPATIBLE_BASE_URL=https://your-api-endpoint/v1   # 可选
+   export OPENAI_COMPATIBLE_MODEL=gpt-4o-mini                       # 可选
+   ```
+2. 从同一终端启动应用
+3. 将 AI Provider 切换为 **openai-compatible**
+
+### 4.4 阅读器工具栏
+
+| 按钮 | 功能 |
+|------|------|
+| Reader / Markdown | 切换文章显示格式 |
+| Light / Sepia / Dark | 切换阅读主题 |
+| 字号调节 | 调整正文字体大小 (12-18px) |
+| 行高调节 | 调整正文行间距 (1.4-2.2) |
+
+---
+
+## 5. 数据存储位置
+
+| 平台 | 数据库 | 日志 |
+|------|--------|------|
+| macOS | `~/Library/Application Support/mercury-vibecoding/mercury-vibecoding.db` | `~/Library/Application Support/mercury-vibecoding/logs/mercury.log` |
+| Windows | `%APPDATA%/mercury-vibecoding/mercury-vibecoding.db` | `%APPDATA%/mercury-vibecoding/logs/mercury.log` |
+
+数据独立于应用程序，升级应用不会丢失订阅和文章数据。
+
+---
+
+## 6. 已知问题
+
+| 问题 | 说明 |
+|------|------|
+| macOS Gatekeeper 拦截 | 应用未签名，首次打开需手动允许（见上方说明） |
+| Windows SmartScreen 拦截 | 同上，点击 "仍要运行" 即可 |
+| AI 功能仅桌面可用 | HTTP 开发模式下不支持 AI 摘要/翻译 |
+| 笔记/标签 UI 未实现 | 后端 API 已就绪，前端界面待后续版本完成 |
+| Intel Mac 无预编译包 | 需自行从源码编译打包 |
+
+---
+
+## 7. 开发者：从源码构建
+
+如需从源码构建或修改：
+
+```bash
+git clone https://github.com/JRXu1028/mercury-vibecoding.git
+cd mercury-vibecoding
+npm install
+npm --prefix frontend install
+
+# 开发模式
+npm run dev:desktop
+
+# 打包
+npm run dist        # 当前平台
+npm run dist:win    # 仅 Windows
+npm run dist -- --mac  # 仅 macOS
+
+# 运行测试
+npm test
+```
