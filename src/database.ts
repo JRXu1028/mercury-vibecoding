@@ -122,6 +122,7 @@ export class AppDatabase {
     this.addColumnIfMissing('entries', 'content_md', 'TEXT')
     this.addColumnIfMissing('entries', 'content_fetched_at', 'TEXT')
     this.addColumnIfMissing('tags', 'updated_at', 'TEXT')
+    this.addColumnIfMissing('llm_providers', 'api_key_encrypted', 'BLOB')
   }
 
   private addColumnIfMissing(tableName: string, columnName: string, definition: string): void {

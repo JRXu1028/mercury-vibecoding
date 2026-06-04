@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ChatLineRound, MagicStick, Refresh } from '@element-plus/icons-vue'
+import { ChatLineRound, MagicStick, Refresh, Setting } from '@element-plus/icons-vue'
 import { teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult } from '../types'
+import ProviderPanel from './ProviderPanel.vue'
 
 const props = defineProps<{
   entry: EntryItem | null
@@ -21,6 +22,7 @@ const aiErrorMessage = ref('')
 const summaryResult = ref<SummaryResult | null>(null)
 const translationResult = ref<TranslationResult | null>(null)
 const aiProviderId = ref<'mock' | 'deepseek'>('mock')
+const providerPanelVisible = ref(false)
 let loadVersion = 0
 let aiVersion = 0
 
@@ -230,6 +232,13 @@ watch(aiProviderId, () => {
         >
           AI Translation
         </el-button>
+        <el-button
+          plain
+          :icon="Setting"
+          size="small"
+          title="AI Provider 设置"
+          @click="providerPanelVisible = true"
+        />
         <span v-if="aiProviderId === 'deepseek'" class="ai-provider-hint">
           DeepSeek 需要在启动桌面应用的 shell 中临时设置 DEEPSEEK_API_KEY。
         </span>
@@ -307,6 +316,15 @@ watch(aiProviderId, () => {
 
     <el-empty v-else description="Select an entry" :image-size="88" />
   </section>
+
+  <el-dialog
+    v-model="providerPanelVisible"
+    title="AI Provider 设置"
+    width="680"
+    :destroy-on-close="true"
+  >
+    <ProviderPanel />
+  </el-dialog>
 </template>
 
 <style scoped>

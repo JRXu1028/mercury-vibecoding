@@ -117,10 +117,22 @@ export interface TeamABridgeApi {
   saveOpmlFile(content: string): Promise<string | null>
 }
 
+export interface ProviderInfo {
+  providerId: string
+  name: string
+  defaultModel: string | null
+  apiKeyEnvVar: string | null
+  available: boolean
+  hasStoredKey: boolean
+}
+
 export interface TeamCBridgeApi {
   getEntryContent(entryId: number, options?: { forceRefresh?: boolean }): Promise<EntryContent>
   summarizeEntry(entryId: number, options?: SummarizeEntryOptions): Promise<SummaryResult>
   translateEntry(entryId: number, options?: TranslateEntryOptions): Promise<TranslationResult>
+  listProviders(): Promise<ProviderInfo[]>
+  testConnection(providerId: string): Promise<{ ok: boolean; error: string | null }>
+  saveProviderApiKey(providerId: string, apiKey: string): Promise<{ ok: boolean; error: string | null }>
 }
 
 export interface LogEntry {

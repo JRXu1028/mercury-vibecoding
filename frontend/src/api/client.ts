@@ -4,6 +4,7 @@ import type {
   EntryItem,
   FeedItem,
   NoteItem,
+  ProviderInfo,
   SummarizeEntryOptions,
   SummaryResult,
   SyncResponse,
@@ -147,6 +148,27 @@ export const teamCApi = {
       return await bridgeC.translateEntry(entryId, options)
     }
     throw new Error('AI translation is only available in the desktop app.')
+  },
+
+  async listProviders(): Promise<ProviderInfo[]> {
+    if (bridgeC) {
+      return await bridgeC.listProviders()
+    }
+    return []
+  },
+
+  async testConnection(providerId: string): Promise<{ ok: boolean; error: string | null }> {
+    if (bridgeC) {
+      return await bridgeC.testConnection(providerId)
+    }
+    throw new Error('连通性测试仅在桌面端可用。')
+  },
+
+  async saveProviderApiKey(providerId: string, apiKey: string): Promise<{ ok: boolean; error: string | null }> {
+    if (bridgeC) {
+      return await bridgeC.saveProviderApiKey(providerId, apiKey)
+    }
+    throw new Error('API Key 设置仅在桌面端可用。')
   }
 }
 

@@ -37,7 +37,10 @@ contextBridge.exposeInMainWorld('teamAApi', {
 contextBridge.exposeInMainWorld('teamCApi', {
   getEntryContent: (entryId, options) => ipcRenderer.invoke('entry:content', { entryId, ...options }),
   summarizeEntry: (entryId, options) => ipcRenderer.invoke('ai:summarizeEntry', { entryId, ...options }),
-  translateEntry: (entryId, options) => ipcRenderer.invoke('ai:translateEntry', { entryId, ...options })
+  translateEntry: (entryId, options) => ipcRenderer.invoke('ai:translateEntry', { entryId, ...options }),
+  listProviders: () => ipcRenderer.invoke('ai:listProviders'),
+  testConnection: (providerId) => ipcRenderer.invoke('ai:testConnection', { providerId }),
+  saveProviderApiKey: (providerId, apiKey) => ipcRenderer.invoke('ai:saveProviderApiKey', { providerId, apiKey })
 })
 
 contextBridge.exposeInMainWorld('teamBApi', {

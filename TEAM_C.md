@@ -315,7 +315,46 @@ npm run dev:ai:openai-compatible
 
 接正文清洗时，把清洗后的 Markdown 放入 `ArticleInput.contentMarkdown`。Team C 第一版不负责抓取、解析或清洗文章正文。
 
-## 验证状态
+## 第二阶段：LLM Provider 配置与连通性测试 UI
+
+### 新增功能
+
+1. **Provider 列表 IPC**：后端新增 `ai:listProviders` handler，从 `llm_providers` 表读取所有已注册 Provider 的元信息（名称、默认模型、API Key 环境变量、是否可用、是否已存储密钥），返回给前端。
+
+2. **连通性测试 IPC**：后端新增 `ai:testConnection` handler，调用对应 Provider 的 `provider.testConnection()`，返回 `{ ok, error }` 结构，失败时包含详细错误原因。
+
+3. **API Key 加密存储 IPC**：后端新增 `ai:saveProviderApiKey` handler，使用 Electron `safeStorage.encryptString()` 将 API Key 加密后存入 `llm_providers.api_key_encrypted`（BLOB 列）。主进程启动时通过 `decryptStoredKey()` 解密并重建对应 Provider 实例，使存储的密钥立即生效，无需重启或重设环境变量。
+
+4. **ProviderPanel 组件**（`frontend/src/components/ProviderPanel.vue`）：独立的 Provider 管理面板，功能包括：
+   - 列出所有注册 Provider 及其信息（名称、ID、默认模型、API Key 环境变量、是否可用、是否已存储密钥）
+   - API Key 列显示已存储密钥的遮盖状态（`●●●●●●●●`）或"未配置"，并提供"设置 / 修改"按钮，点击弹出密码输入 dialog，输入后调用 `ai:saveProviderApiKey` 加密保存
+   - 每行有"测试连接"按钮，点击后显示连接成功（绿色）或失败原因（红色，hover 显示详细错误）
+   - 刷新按钮重新加载列表
+   - 底部提示：API Key 加密存储在本地数据库，应用内不会明文展示
+
+5. **Provider Settings 入口**：在 `EntryDetailPane.vue` 的 AI 工具栏末尾新增 Setting 图标按钮，点击弹出 `el-dialog` 包裹的 `ProviderPanel`，与项目既有 dialog 模式一致。
+
+### 涉及文件
+
+| 文件 | 改动 |
+|------|------|
+| `src/database.ts` | `runMigrations()` 追加 `llm_providers.api_key_encrypted BLOB` 列迁移 |
+| `src/usageService.ts` | 新增 `getProvider(providerId)` 查询（含 `hasStoredKey`）、`saveApiKey()`、`loadApiKey()` |
+| `src/electronMain.ts` | 新增 `ai:listProviders`、`ai:testConnection`、`ai:saveProviderApiKey` IPC handler；新增 `decryptStoredKey()` 在启动时用存储密钥重建 Provider；import 补全 `getProvider`、`listProviderIds`、`createDeepSeekProvider`、`createOpenAICompatibleProvider`、`safeStorage` |
+| `electron/preload.cjs` | `teamCApi` 追加 `listProviders()`、`testConnection(providerId)`、`saveProviderApiKey(providerId, apiKey)` |
+| `frontend/src/types.ts` | 新增 `ProviderInfo` 接口（含 `hasStoredKey`）；`TeamCBridgeApi` 追加三个方法签名 |
+| `frontend/src/api/client.ts` | `teamCApi` 追加 `listProviders()`、`testConnection()`、`saveProviderApiKey()` |
+| `frontend/src/element-plus-icons-vue.d.ts` | 追加 `Setting` 图标类型声明 |
+| `frontend/src/components/ProviderPanel.vue` | 新建，Provider 管理面板组件（含 API Key 设置 dialog） |
+| `frontend/src/components/EntryDetailPane.vue` | 引入 `ProviderPanel`、`Setting` 图标；ai-toolbar 增加设置按钮；新增 Provider 设置 dialog |
+
+### 架构边界说明
+
+- Renderer 仍只传 `providerId`，不接触 Provider 实例。API Key 只在主进程内流通，Renderer 仅传入明文一次（用于保存），主进程加密后不再下发。
+- `testConnection` 和 `saveProviderApiKey` 均在主进程执行，错误原因经 IPC 返回。
+- `available` 字段由主进程同时检查 `process.env[apiKeyEnvVar]` 和 `hasStoredKey` 决定，Renderer 只展示状态。
+- `safeStorage` 加密与系统账户绑定，密钥无法直接被其他用户账户或进程读取。若系统加密不可用，`ai:saveProviderApiKey` 会返回错误而非明文存储。
+
 
 2026-05-28 已验证：
 
@@ -357,3 +396,16 @@ rg -n "sk-[A-Za-z0-9_-]{16,}" . -S
 - 前端结果区目前是最小演示版，只按 segment 输出文本，不做完整 Markdown 渲染、非正文段落过滤或阅读器级排版。
 - 为了演示更清晰，桌面端默认翻译请求已改为 `bilingual: false`，只展示译文，避免原文和译文逐段混排造成明显重复。
 - 后续建议单独优化 Markdown 分段、翻译前过滤、翻译后渲染和结果区交互，不应和本次真实 Provider 链路提交混在一起扩大范围。
+
+2026-06-04 已验证（第二阶段 Provider 配置与加密存储）：
+
+```bash
+npm run build
+npm --prefix frontend run build
+```
+
+验证结果：
+
+- `npm run build`（TypeScript 后端）通过，无编译错误。
+- `npm --prefix frontend run build`（前端 typecheck + Vite build）通过，1607 个模块，typecheck 无报错。
+- 新增的 `ProviderPanel.vue`、`ProviderInfo` 接口、`saveProviderApiKey` IPC 链路和 `api_key_encrypted` 迁移均通过编译验证。

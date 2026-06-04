@@ -11,10 +11,10 @@ import { OPMLService } from './opmlService.js'
 import { TagsService } from './tagsService.js'
 import { UsageService } from './usageService.js'
 import { logger } from './logger.js'
-import { hasProvider, registerProvider } from './ai/providerRegistry.js'
-import { deepSeekProvider } from './ai/providers/deepSeekProvider.js'
+import { getProvider, hasProvider, listProviderIds, registerProvider } from './ai/providerRegistry.js'
+import { deepSeekProvider, createDeepSeekProvider } from './ai/providers/deepSeekProvider.js'
 import { mockProvider } from './ai/providers/mockProvider.js'
-import { openAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
+import { openAICompatibleProvider, createOpenAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
 import { summarizeArticle } from './ai/summaryAgent.js'
 import { translateArticle } from './ai/translationAgent.js'
 import type { ArticleInput, SummaryOptions, TranslationOptions } from './ai/types.js'
@@ -23,7 +23,7 @@ import type { EntryContent } from './models.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
-const { app, BrowserWindow, dialog, ipcMain } = require('electron') as typeof import('electron')
+const { app, BrowserWindow, dialog, ipcMain, safeStorage } = require('electron') as typeof import('electron')
 
 const preloadPath = path.resolve(__dirname, '..', 'electron', 'preload.cjs')
 const rendererDevURL = process.env.MERCURY_RENDERER_URL ?? 'http://127.0.0.1:5173'
@@ -52,6 +52,16 @@ type AiEntryBasePayload = {
 type AiSummarizeEntryPayload = AiEntryBasePayload & SummaryOptions
 type AiTranslateEntryPayload = AiEntryBasePayload & Partial<TranslationOptions>
 
+function decryptStoredKey(providerId: string): string | undefined {
+  const buf = usageService.loadApiKey(providerId)
+  if (!buf) return undefined
+  try {
+    return safeStorage.decryptString(buf)
+  } catch {
+    return undefined
+  }
+}
+
 function registerAiProviders(): void {
   if (!hasProvider(mockProvider.id)) {
     registerProvider(mockProvider)
@@ -61,23 +71,27 @@ function registerAiProviders(): void {
     })
   }
 
-  if (!hasProvider(deepSeekProvider.id)) {
-    registerProvider(deepSeekProvider)
-    usageService.upsertProvider({
-      providerId: deepSeekProvider.id,
-      name: deepSeekProvider.name,
-      apiKeyEnvVar: 'DEEPSEEK_API_KEY'
-    })
-  }
+  usageService.upsertProvider({
+    providerId: deepSeekProvider.id,
+    name: deepSeekProvider.name,
+    apiKeyEnvVar: 'DEEPSEEK_API_KEY'
+  })
+  const deepSeekApiKey = decryptStoredKey(deepSeekProvider.id)
+  registerProvider(
+    deepSeekApiKey ? createDeepSeekProvider({ apiKey: deepSeekApiKey }) : deepSeekProvider,
+    { overwrite: true }
+  )
 
-  if (!hasProvider(openAICompatibleProvider.id)) {
-    registerProvider(openAICompatibleProvider)
-    usageService.upsertProvider({
-      providerId: openAICompatibleProvider.id,
-      name: openAICompatibleProvider.name,
-      apiKeyEnvVar: 'OPENAI_COMPATIBLE_API_KEY'
-    })
-  }
+  usageService.upsertProvider({
+    providerId: openAICompatibleProvider.id,
+    name: openAICompatibleProvider.name,
+    apiKeyEnvVar: 'OPENAI_COMPATIBLE_API_KEY'
+  })
+  const openAiApiKey = decryptStoredKey(openAICompatibleProvider.id)
+  registerProvider(
+    openAiApiKey ? createOpenAICompatibleProvider({ apiKey: openAiApiKey }) : openAICompatibleProvider,
+    { overwrite: true }
+  )
 }
 
 function toArticleInput(content: EntryContent): ArticleInput {
@@ -166,6 +180,52 @@ function initServices(): void {
 
 function registerIpcHandlers(): void {
   registerAiProviders()
+
+  ipcMain.handle('ai:listProviders', () => {
+    return listProviderIds().map((id) => {
+      const row = usageService.getProvider(id)
+      const hasEnvKey = row?.apiKeyEnvVar ? Boolean(process.env[row.apiKeyEnvVar]) : false
+      return {
+        providerId: id,
+        name: row?.name ?? id,
+        defaultModel: row?.defaultModel ?? null,
+        apiKeyEnvVar: row?.apiKeyEnvVar ?? null,
+        hasStoredKey: row?.hasStoredKey ?? false,
+        available: hasEnvKey || (row?.hasStoredKey ?? false) || !row?.apiKeyEnvVar
+      }
+    })
+  })
+
+  ipcMain.handle('ai:saveProviderApiKey', async (_event: IpcMainInvokeEvent, payload: { providerId: string; apiKey: string }) => {
+    try {
+      if (!safeStorage.isEncryptionAvailable()) {
+        throw new Error('系统加密功能不可用，无法安全保存 API Key。')
+      }
+      const encrypted = safeStorage.encryptString(payload.apiKey)
+      usageService.saveApiKey(payload.providerId, encrypted)
+
+      // 重新创建 provider 实例以立即生效
+      if (payload.providerId === deepSeekProvider.id) {
+        registerProvider(createDeepSeekProvider({ apiKey: payload.apiKey }), { overwrite: true })
+      } else if (payload.providerId === openAICompatibleProvider.id) {
+        registerProvider(createOpenAICompatibleProvider({ apiKey: payload.apiKey }), { overwrite: true })
+      }
+
+      return { ok: true, error: null }
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  ipcMain.handle('ai:testConnection', async (_event: IpcMainInvokeEvent, payload: { providerId: string }) => {
+    try {
+      const provider = getProvider(payload.providerId)
+      const ok = await provider.testConnection()
+      return { ok, error: null }
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
 
   ipcMain.handle('feed:list', async () => {
     return getFeedsWithEntryCount()

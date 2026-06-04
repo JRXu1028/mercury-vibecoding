@@ -33,6 +33,19 @@ export class UsageService {
     )
   }
 
+  getProvider(providerId: string): { name: string; defaultModel: string | null; apiKeyEnvVar: string | null; hasStoredKey: boolean } | null {
+    const row = this.db.prepare(
+      'SELECT name, default_model, api_key_env_var, api_key_encrypted FROM llm_providers WHERE provider_id = ?'
+    ).get(providerId) as { name: string; default_model: string | null; api_key_env_var: string | null; api_key_encrypted: Buffer | null } | undefined
+    if (!row) return null
+    return {
+      name: row.name,
+      defaultModel: row.default_model,
+      apiKeyEnvVar: row.api_key_env_var,
+      hasStoredKey: row.api_key_encrypted != null
+    }
+  }
+
   upsertProvider(params: {
     providerId: string
     name: string
@@ -59,5 +72,18 @@ export class UsageService {
       timestamp,
       timestamp
     )
+  }
+
+  saveApiKey(providerId: string, encryptedBuf: Buffer): void {
+    this.db.prepare(
+      'UPDATE llm_providers SET api_key_encrypted = ?, updated_at = ? WHERE provider_id = ?'
+    ).run(encryptedBuf, nowIso(), providerId)
+  }
+
+  loadApiKey(providerId: string): Buffer | null {
+    const row = this.db.prepare(
+      'SELECT api_key_encrypted FROM llm_providers WHERE provider_id = ?'
+    ).get(providerId) as { api_key_encrypted: Buffer | null } | undefined
+    return row?.api_key_encrypted ?? null
   }
 }

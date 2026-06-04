@@ -8,6 +8,7 @@ declare module '@element-plus/icons-vue' {
   export const Plus: Component
   export const Refresh: Component
   export const RefreshRight: Component
+  export const Setting: Component
   export const Upload: Component
   export const UploadFilled: Component
 }
