@@ -144,6 +144,14 @@ CREATE TABLE entry_tags (
   tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY(entry_id, tag_id)
 );
+
+-- 索引
+CREATE INDEX idx_entries_feed_id ON entries(feed_id);
+CREATE INDEX idx_entries_published_at ON entries(published_at);
+CREATE INDEX idx_llm_usage_entry_id ON llm_usage(entry_id);
+CREATE INDEX idx_llm_usage_provider ON llm_usage(provider_id);
+CREATE INDEX idx_notes_entry_id ON notes(entry_id);
+CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 ```
 
 ## 3. IPC 通道清单
