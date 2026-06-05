@@ -232,3 +232,7 @@ frontend/src/**/*.js
 frontend/src/**/*.vue.js
 
 .DS_Store
+
+# Local tools / non-project files
+ppt_part1.cjs
+.claude/
