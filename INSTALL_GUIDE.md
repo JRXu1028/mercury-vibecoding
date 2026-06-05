@@ -84,6 +84,16 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 
 ### 4.2 DeepSeek 模式
 
+**方式一：应用内设置（推荐）**
+
+1. 在应用中选中任意文章，在右侧 AI 工具栏点击齿轮图标 ⚙️
+2. 在弹出的 Provider 设置面板中，找到 DeepSeek Provider，点击"设置"
+3. 输入你的 DeepSeek API Key，点击"保存"
+4. API Key 会通过 Electron safeStorage 加密存储在本地数据库中
+5. 将 AI Provider 切换为 **DeepSeek**，即可使用
+
+**方式二：环境变量**
+
 1. 如果应用正在运行，先退出（Cmd+Q）
 2. 在终端中设置环境变量并启动应用：
    ```bash
@@ -95,6 +105,15 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 4. 点击 **AI Summary** 获取摘要，或 **AI Translation** 获取中文翻译
 
 ### 4.3 OpenAI-Compatible 模式
+
+**方式一：应用内设置（推荐）**
+
+1. 在应用中选中任意文章，在右侧 AI 工具栏点击齿轮图标 ⚙️
+2. 在弹出的 Provider 设置面板中，找到 OpenAI-Compatible Provider，点击"设置"
+3. 输入你的 API Key，点击"保存"
+4. 将 AI Provider 切换为 **openai-compatible**，即可使用
+
+**方式二：环境变量**
 
 1. 如果应用正在运行，先退出（Cmd+Q）
 2. 在终端中设置环境变量并启动应用：

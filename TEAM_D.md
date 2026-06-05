@@ -101,6 +101,7 @@ CREATE TABLE llm_providers (
   name TEXT NOT NULL,
   api_base_url TEXT,
   api_key_env_var TEXT,
+  api_key_encrypted BLOB,
   default_model TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -173,6 +174,9 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 | `entry:content` | R→M | `{entryId,forceRefresh?}` | `EntryContent` | B (服务) / C (桥接) | `teamCApi` |
 | `ai:summarizeEntry` | R→M | `{entryId,...SummaryOptions,forceRefreshContent?}` | `SummaryResult` | C | `teamCApi` |
 | `ai:translateEntry` | R→M | `{entryId,...TranslationOptions,forceRefreshContent?}` | `TranslationResult` | C | `teamCApi` |
+| `ai:listProviders` | R→M | - | `ProviderInfo[]` | C | `teamCApi` |
+| `ai:testConnection` | R→M | `{providerId}` | `{ok,error}` | C | `teamCApi` |
+| `ai:saveProviderApiKey` | R→M | `{providerId,apiKey}` | `{ok,error}` | C | `teamCApi` |
 | `notes:list` | R→M | `{entryId?}` | `NoteItem[]` | D | `teamBApi` |
 | `notes:create` | R→M | `{entryId,content,title?}` | `NoteItem` | D | `teamBApi` |
 | `notes:update` | R→M | `{noteId,title?,content?}` | `NoteItem` | D | `teamBApi` |
@@ -296,8 +300,8 @@ export DEEPSEEK_API_KEY=your-key
 | P2 | notes CRUD 服务 | ✅ 完成 |
 | P2 | tags CRUD 服务 | ✅ 完成 |
 | P2 | AI 用量记录 + Provider 持久化 | ✅ 完成 |
-| P3 | API Key 持久化存储 | ⬜ 待做 |
+| P3 | API Key 持久化存储 | ✅ 完成 (Team C 实现) |
 | P3 | notes/tags 前端 UI 组件 | ⬜ 待做 |
 | P3 | LLM 用量查询 IPC + 前端展示 | ⬜ 待做 |
-| P3 | Windows/Linux 打包发布 | ⬜ 待做 |
+| P3 | Windows/Linux 打包发布 | ✅ 完成 (CI 自动构建) |
 | P3 | 应用图标 + 代码签名 | ⬜ 待做 |
