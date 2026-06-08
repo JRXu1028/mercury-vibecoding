@@ -215,7 +215,7 @@ npm run start:desktop
 - **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
 - **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（主题/字号/行距）
 - **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible 三种 Provider、API Key 加密存储与连通性测试、Provider 管理面板
-- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、28 个 IPC 通道、日志系统、Notes/Tags/Usage 后端服务、跨平台打包（Mac + Windows）
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、28 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
 
 ---
 
@@ -233,3 +233,4 @@ npm run start:desktop
 | 2026-06-01 | Team C | 完成 Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible 三种 LLM Provider 接入。 |
 | 2026-06-04 | Team D | 完成项目脚手架与 Electron 桌面化改造、SQLite 数据库 schema（6 张表 + 迁移）、25 个 IPC 通道与 contextBridge 桥接、日志系统、Notes/Tags/Usage 后端服务、跨平台 CI 自动构建与打包（macOS dmg + Windows exe）、安装指南文档。 |
 | 2026-06-05 | Team C | 完成 API Key 加密存储（Electron safeStorage）、Provider 连通性测试、Provider 管理面板 UI（ProviderPanel）。新增 3 个 IPC 通道（ai:listProviders、ai:testConnection、ai:saveProviderApiKey）、llm_providers 表新增 api_key_encrypted 列。 |
+| 2026-06-08 | Team D | 完成 Notes/Tags 前端 UI（EntryTags 组件、EntryNotes 组件），集成到 EntryDetailPane。演示测试数据文档（TEST_DATA.md）。 |

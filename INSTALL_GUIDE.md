@@ -154,7 +154,6 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 | macOS Gatekeeper 拦截 | 应用未签名，首次打开需手动允许（见上方说明） |
 | Windows SmartScreen 拦截 | 同上，点击 "仍要运行" 即可 |
 | AI 功能仅桌面可用 | HTTP 开发模式下不支持 AI 摘要/翻译 |
-| 笔记/标签 UI 未实现 | 后端 API 已就绪，前端界面待后续版本完成 |
 | Intel Mac 无预编译包 | 需自行从源码编译打包 |
 
 ---

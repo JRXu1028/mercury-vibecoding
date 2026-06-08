@@ -301,7 +301,7 @@ export DEEPSEEK_API_KEY=your-key
 | P2 | tags CRUD 服务 | ✅ 完成 |
 | P2 | AI 用量记录 + Provider 持久化 | ✅ 完成 |
 | P3 | API Key 持久化存储 | ✅ 完成 (Team C 实现) |
-| P3 | notes/tags 前端 UI 组件 | ⬜ 待做 |
+| P3 | notes/tags 前端 UI 组件 | ✅ 完成 |
 | P3 | LLM 用量查询 IPC + 前端展示 | ⬜ 待做 |
 | P3 | Windows/Linux 打包发布 | ✅ 完成 (CI 自动构建) |
 | P3 | 应用图标 + 代码签名 | ⬜ 待做 |

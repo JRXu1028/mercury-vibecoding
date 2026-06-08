@@ -4,6 +4,8 @@ import { ChatLineRound, MagicStick, Refresh, Setting } from '@element-plus/icons
 import { teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult } from '../types'
 import ProviderPanel from './ProviderPanel.vue'
+import EntryTags from './EntryTags.vue'
+import EntryNotes from './EntryNotes.vue'
 
 const props = defineProps<{
   entry: EntryItem | null
@@ -185,6 +187,8 @@ watch(aiProviderId, () => {
         <span v-if="content">Cleaned {{ formatTime(content.fetchedAt) }}</span>
       </div>
 
+      <EntryTags :entry-id="entry.id" />
+
       <div class="reader-toolbar">
         <el-segmented
           v-model="activeView"
@@ -312,6 +316,8 @@ watch(aiProviderId, () => {
           </div>
         </section>
       </section>
+
+      <EntryNotes :entry-id="entry.id" />
     </template>
 
     <el-empty v-else description="Select an entry" :image-size="88" />
