@@ -179,6 +179,8 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 | `ai:saveProviderApiKey` | R→M | `{providerId,apiKey}` | `{ok,error}` | C | `teamCApi` |
 | `ai:getUsageStats` | R→M | - | `UsageStats` | C/D | `teamCApi` |
 | `ai:translationSegment` | M→R | `TranslationSegmentEvent` | (事件推送) | C | `teamCApi.onTranslationSegment` |
+| `link:openExternal` | R→M | `{url}` | `{ok}` | B | `teamBApi` |
+| `link:openInApp` | R→M | `{url}` | `{ok}` | B | `teamBApi` |
 | `notes:list` | R→M | `{entryId?}` | `NoteItem[]` | D | `teamBApi` |
 | `notes:create` | R→M | `{entryId,content,title?}` | `NoteItem` | D | `teamBApi` |
 | `notes:update` | R→M | `{noteId,title?,content?}` | `NoteItem` | D | `teamBApi` |
