@@ -11,7 +11,9 @@ import type {
   TagItem,
   TagWithCount,
   TranslateEntryOptions,
-  TranslationResult
+  TranslationResult,
+  TranslationSegmentEvent,
+  UsageStats
 } from '../types'
 
 const bridgeA = window.teamAApi
@@ -169,6 +171,21 @@ export const teamCApi = {
       return await bridgeC.saveProviderApiKey(providerId, apiKey)
     }
     throw new Error('API Key 设置仅在桌面端可用。')
+  },
+
+  async getUsageStats(): Promise<UsageStats> {
+    if (bridgeC) {
+      return await bridgeC.getUsageStats()
+    }
+    throw new Error('用量统计仅在桌面端可用。')
+  },
+
+  onTranslationSegment(callback: (data: TranslationSegmentEvent) => void): () => void {
+    if (bridgeC) {
+      return bridgeC.onTranslationSegment(callback)
+    }
+    // HTTP mode: no-op, return empty cleanup
+    return () => {}
   }
 }
 

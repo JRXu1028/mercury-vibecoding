@@ -409,3 +409,132 @@ npm --prefix frontend run build
 - `npm run build`（TypeScript 后端）通过，无编译错误。
 - `npm --prefix frontend run build`（前端 typecheck + Vite build）通过，1607 个模块，typecheck 无报错。
 - 新增的 `ProviderPanel.vue`、`ProviderInfo` 接口、`saveProviderApiKey` IPC 链路和 `api_key_encrypted` 迁移均通过编译验证。
+
+## 第三阶段：UI 优化、ECNU 接入与实时翻译
+
+### 概述
+
+第三阶段在已有 AI 能力基础上进行全面优化，覆盖四个方面：侧栏折叠与阅读体验优化、ECNU 大模型接入、LLM 用量查询与展示、实时逐段翻译推送。
+
+### 一、侧栏折叠与阅读体验优化
+
+1. **侧栏回收/放出**：FeedSidebar 和 EntryListPane 各新增折叠按钮（`DArrowLeft`），点击后缩窄为 44px 竖条，只保留竖排标签。再次点击恢复。折叠状态由 `App.vue` 管理，grid 列宽通过 `computed` 动态计算，CSS `transition` 实现平滑过渡。
+
+2. **翻译逐段双语展示**：翻译结果改为独立的 **Translation** 视图模式（与 Reader / Markdown / Summary 同级）。每段以"原文（浅灰背景 + 左侧色条）→ 译文（正常字体）"成对展示，段落间虚线分隔，失败段落显示红色标记。支持 Light / Sepia / Dark 主题。
+
+3. **摘要位置重设计**：AI Summary 从底部移到 Reader/Markdown 视图顶部的蓝色渐变内联卡片；新增独立 Summary 视图模式。视图切换栏动态增删 Summary / Translation 选项。
+
+4. **Markdown 格式转换增强**：`simpleMarkdownToHtml()` 完整支持标题（h1–h6）、粗体/斜体/删除线、行内代码与围栏代码块、链接/图片、有序/无序列表、引用块、水平分割线、裸 URL 自动链接。译文和原文均通过该函数渲染。
+
+5. **Bug 修复**：
+   - Dark 模式 AI Summary 不可见（Vue scoped CSS 后代选择器改为同元素多类选择器）
+   - 翻译译文 Markdown 格式未转换（`{{ }}` 改为 `v-html`，补全 `:deep()` 样式）
+
+### 二、ECNU 大模型接入与 Provider 选择动态化
+
+1. **ECNU 大模型 Provider**：基于 ChatECNU 官方 API（`https://chat.ecnu.edu.cn/open/api/v1`）注册 `ecnu` Provider，使用 `createOpenAICompatibleProvider` 工厂。默认模型 `ecnu-max`（DeepSeek-V4-Flash，1M 上下文）。通过 `ECNU_API_KEY` / `ECNU_BASE_URL` / `ECNU_MODEL` 环境变量配置。支持在 ProviderPanel 中加密存储 Key 并立即生效。
+
+2. **动态 Provider 选择器**：`aiProviderOptions` 从静态硬编码改为动态加载。`loadProviders()` 从后端获取所有 Provider，填充下拉选项。未配置的 Provider 显示"（未配置）"标记。当前 Provider 不可用时自动切换。
+
+3. **移除默认 openai-compatible 注册**：通用 openai-compatible Provider 从默认注册中移除，`createOpenAICompatibleProvider` 工厂保留供 ECNU 使用。
+
+### 三、LLM 用量查询与展示
+
+完整实现用量查询全链路：
+
+| 层 | 改动 |
+|----|------|
+| 后端 | `usageService.getUsageSummary()` — 总量 / 按 Provider / 按操作类型 / 最近调用 |
+| IPC | `ai:getUsageStats` handler |
+| Preload | `getUsageStats()` 桥接 |
+| 前端类型 | `UsageStats` 接口 |
+| API | `teamCApi.getUsageStats()` |
+| UI | `ProviderPanel.vue` 用量统计区域 — 总调用次数/Token 卡片 + 分布明细 + 刷新 |
+
+### 四、实时逐段翻译推送
+
+通过 Main→Renderer 事件推送实现翻译逐段实时显示：
+
+**数据流**：`translationAgent`（每段完成回调）→ IPC handler（`webContents.send('ai:translationSegment')`）→ Preload 事件监听 → Client 透传 → Vue 组件逐步追加 `segments`
+
+- `translateArticle()` 新增可选 `onProgress` 回调，每完成一段立即推送
+- 前端 `onTranslationSegment` 监听器接收每段数据，按 index 排序插入
+- 首段到达自动切换到 Translation 视图，头部显示"翻译中 3/15 段…"实时进度
+- 监听器在文章切换/AI 重置时自动清理
+
+### 涉及文件总览
+
+| 文件 | 改动 |
+|------|------|
+| `src/ai/translationAgent.ts` | 新增 `TranslateProgressCallback` 类型；`translateArticle()` 新增 `onProgress` 参数 |
+| `src/electronMain.ts` | ECNU Provider 注册 + saveProviderApiKey 支持；`ai:getUsageStats` IPC；翻译 progress 回调推送 `ai:translationSegment` 事件；移除 openai-compatible 默认注册 |
+| `src/usageService.ts` | 新增 `getUsageSummary()` 方法 |
+| `electron/preload.cjs` | 新增 `getUsageStats()`、`onTranslationSegment()` |
+| `frontend/src/App.vue` | 新增折叠状态 + 动态 grid |
+| `frontend/src/components/FeedSidebar.vue` | 折叠支持 |
+| `frontend/src/components/EntryListPane.vue` | 折叠支持 |
+| `frontend/src/components/EntryDetailPane.vue` | 动态 Provider 选择器；Markdown 转换；Translation/Summary 视图；Dark 模式修复；实时翻译段监听；翻译进度显示 |
+| `frontend/src/components/ProviderPanel.vue` | 用量统计 UI |
+| `frontend/src/types.ts` | `UsageStats`、`TranslationSegmentEvent` 类型 |
+| `frontend/src/api/client.ts` | `getUsageStats()`、`onTranslationSegment()` |
+| `frontend/src/styles.css` | grid transition |
+| `frontend/src/element-plus-icons-vue.d.ts` | 图标声明 |
+
+### 架构边界说明
+
+- 侧栏折叠是纯前端 UI 状态，不涉及 IPC 或数据库。
+- ECNU Provider 采用 OpenAI-compatible 协议，API Key 通过 `safeStorage` 加密存储。
+- 用量数据来源于 `llm_usage` 表，`getUsageSummary()` 仅做聚合查询。
+- 翻译事件推送是单向的（Main→Renderer），不影响 invoke/return 模式。segments 按 index 排序防乱序。
+- HTTP 开发模式下 `getUsageStats()` / `onTranslationSegment()` 返回空实现或抛出错误，仅在桌面端可用。
+
+2026-06-09 已验证（第三阶段）：
+
+```bash
+npm run build
+npm --prefix frontend run build
+```
+
+验证结果：
+
+- `npm run build`（TypeScript 后端）通过，无编译错误。
+- `npm --prefix frontend run build`（前端 typecheck + Vite build）通过，1615 个模块，typecheck 无报错。
+- 侧栏折叠、翻译/摘要视图、Markdown 转换、ECNU 接入、用量查询、实时翻译均通过编译验证。
+
+---
+
+## 待改进点清单（更新于 2026-06-09）
+
+P0 和 P1 翻译进度问题已修复。
+
+### P1 — 体验与数据
+
+| # | 问题 | 位置 | 说明 |
+|---|------|------|------|
+| 1 | **AI 结果不持久化** | `EntryDetailPane.vue` | `resetAiResults()` 在切换文章时直接把 `summaryResult` / `translationResult` 置 null；没有表保存 AI 生成的内容，用户切回来必须重新请求 |
+| 2 | **无取消机制** | `EntryDetailPane.vue` | 点击翻译/摘要后无法中途取消；`AbortController` 未传递给 Provider，即使 UI 层面允许取消底层 HTTP 请求也不会中断 |
+
+### P2 — 健壮性
+
+| # | 问题 | 位置 | 说明 |
+|---|------|------|------|
+| 3 | **无重试策略** | `deepSeekProvider.ts` | `chat()` 中 `fetch()` 没有任何重试逻辑；网络抖动或 API 429 限流直接抛错 |
+| 4 | **无请求超时控制** | 同上 | `fetch()` 没有 `AbortController` + `setTimeout` 超时机制；API 卡住时请求可能永远挂起 |
+| 5 | **Markdown 分段过于简单** | `translationAgent.ts` | 仅按 `/\n\s*\n/` 空行切割，不处理图片 `![]()`、badge、HTML 注释、锚点等非正文元素；嵌套列表结构可能被切碎 |
+| 6 | **长文无截断/map-reduce** | `summaryAgent.ts` / `translationAgent.ts` | 没有内容长度检查；cleaned Markdown 超过模型 context 限制时直接报错 |
+
+### P3 — 工程与测试
+
+| # | 问题 | 位置 | 说明 |
+|---|------|------|------|
+| 7 | **核心模块零测试** | `tests/` | Team A/B/D 都有测试覆盖，Team C 的 Agent、Provider、Registry 均无测试 |
+| 8 | **Provider Registry 纯内存** | `providerRegistry.ts` | `Map<string, LLMProvider>` 只在内存中；若后续支持用户自定义 Provider，重启后需重新注册 |
+| 9 | **dev:server HTTP 模式下 AI 不可用** | `client.ts` | summarize/translate 在非 Electron 环境直接 `throw new Error`，纯前端开发时无法调试 AI 功能 |
+| 10 | **流式输出缺失** | `LLMProvider` 接口 | `chat()` 不支持 streaming；DeepSeek / OpenAI API 都支持 `stream: true`，但 Provider 接口未定义流式方法 |
+
+### 技术债务
+
+| # | 问题 | 说明 |
+|---|------|------|
+| 12 | `hasAiResult` computed 定义但未使用 | `EntryDetailPane.vue:44` — 模板中从未引用 |
+| 13 | 前端无 Provider 缓存 | `loadProviders()` 在每次切换文章时调用，增加不必要的 IPC 开销 |

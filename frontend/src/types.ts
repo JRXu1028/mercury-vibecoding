@@ -133,6 +133,23 @@ export interface TeamCBridgeApi {
   listProviders(): Promise<ProviderInfo[]>
   testConnection(providerId: string): Promise<{ ok: boolean; error: string | null }>
   saveProviderApiKey(providerId: string, apiKey: string): Promise<{ ok: boolean; error: string | null }>
+  getUsageStats(): Promise<UsageStats>
+  onTranslationSegment(callback: (data: TranslationSegmentEvent) => void): () => void
+}
+
+export interface TranslationSegmentEvent {
+  entryId: number
+  segment: TranslationSegment
+  done: number
+  total: number
+}
+
+export interface UsageStats {
+  totalTokens: number
+  totalCalls: number
+  byProvider: Array<{ providerId: string; callCount: number; totalTokens: number }>
+  byOperation: Array<{ operation: string; callCount: number; totalTokens: number }>
+  recentCalls: Array<{ providerId: string; operation: string; model: string; totalTokens: number; createdAt: string }>
 }
 
 export interface LogEntry {

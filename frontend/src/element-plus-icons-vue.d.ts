@@ -3,6 +3,8 @@ declare module '@element-plus/icons-vue' {
 
   export const ChatLineRound: Component
   export const Close: Component
+  export const DArrowLeft: Component
+  export const DArrowRight: Component
   export const Delete: Component
   export const Edit: Component
   export const Download: Component

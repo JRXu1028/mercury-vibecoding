@@ -164,9 +164,14 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+export interface TranslateProgressCallback {
+  (segment: TranslationSegment, done: number, total: number): void
+}
+
 export async function translateArticle(
   article: ArticleInput,
   options: TranslationOptions,
+  onProgress?: TranslateProgressCallback,
 ): Promise<TranslationResult> {
   const contentMarkdown = normalizeArticleMarkdown(article)
   const sourceSegments = splitMarkdownIntoSourceSegments(contentMarkdown)
@@ -177,6 +182,7 @@ export async function translateArticle(
   let responseModel = options.model ?? 'provider-default'
 
   const segments: TranslationSegment[] = []
+  const total = sourceSegments.length
 
   for (const sourceSegment of sourceSegments) {
     try {
@@ -184,7 +190,7 @@ export async function translateArticle(
         article,
         sourceSegment,
         { ...options, bilingual },
-        sourceSegments.length,
+        total,
       )
       const response = await provider.chat(messages, {
         model: options.model,
@@ -203,20 +209,24 @@ export async function translateArticle(
       responseProviderId = response.providerId
       responseModel = response.model
 
-      segments.push({
+      const seg: TranslationSegment = {
         index: sourceSegment.index,
         source: sourceSegment.source,
         translated,
         status: 'success',
-      })
+      }
+      segments.push(seg)
+      onProgress?.(seg, segments.length, total)
     } catch (error) {
-      segments.push({
+      const seg: TranslationSegment = {
         index: sourceSegment.index,
         source: sourceSegment.source,
         translated: '',
         status: 'failed',
         error: getErrorMessage(error),
-      })
+      }
+      segments.push(seg)
+      onProgress?.(seg, segments.length, total)
     }
   }
 

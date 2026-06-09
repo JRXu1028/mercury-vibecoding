@@ -14,7 +14,7 @@ import { logger } from './logger.js'
 import { getProvider, hasProvider, listProviderIds, registerProvider } from './ai/providerRegistry.js'
 import { deepSeekProvider, createDeepSeekProvider } from './ai/providers/deepSeekProvider.js'
 import { mockProvider } from './ai/providers/mockProvider.js'
-import { openAICompatibleProvider, createOpenAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
+import { createOpenAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
 import { summarizeArticle } from './ai/summaryAgent.js'
 import { translateArticle } from './ai/translationAgent.js'
 import type { ArticleInput, SummaryOptions, TranslationOptions } from './ai/types.js'
@@ -32,6 +32,11 @@ const rawSyncMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '10')
 const autoSyncIntervalMinutes = Number.isFinite(rawSyncMinutes) && rawSyncMinutes > 0 ? rawSyncMinutes : 10
 const useDevServer = Boolean(process.env.MERCURY_RENDERER_URL)
 const defaultTranslationTargetLanguage = 'zh-CN'
+
+// ECNU Provider config
+const ECNU_PROVIDER_ID = 'ecnu'
+const ecnuDefaultBaseUrl = process.env.ECNU_BASE_URL ?? 'https://chat.ecnu.edu.cn/open/api/v1'
+const ecnuDefaultModel = process.env.ECNU_MODEL ?? 'ecnu-max'
 
 let database: AppDatabase
 let feedService: FeedService
@@ -82,14 +87,22 @@ function registerAiProviders(): void {
     { overwrite: true }
   )
 
-  usageService.upsertProvider({
-    providerId: openAICompatibleProvider.id,
-    name: openAICompatibleProvider.name,
-    apiKeyEnvVar: 'OPENAI_COMPATIBLE_API_KEY'
+  // ECNU 大模型 (OpenAI-compatible)
+  const ecnuProvider = createOpenAICompatibleProvider({
+    id: ECNU_PROVIDER_ID,
+    name: 'ECNU 大模型',
+    baseUrl: ecnuDefaultBaseUrl,
+    model: ecnuDefaultModel
   })
-  const openAiApiKey = decryptStoredKey(openAICompatibleProvider.id)
+  usageService.upsertProvider({
+    providerId: ECNU_PROVIDER_ID,
+    name: 'ECNU 大模型',
+    apiKeyEnvVar: 'ECNU_API_KEY',
+    defaultModel: ecnuDefaultModel
+  })
+  const ecnuApiKey = decryptStoredKey(ECNU_PROVIDER_ID)
   registerProvider(
-    openAiApiKey ? createOpenAICompatibleProvider({ apiKey: openAiApiKey }) : openAICompatibleProvider,
+    ecnuApiKey ? createOpenAICompatibleProvider({ id: ECNU_PROVIDER_ID, name: 'ECNU 大模型', baseUrl: ecnuDefaultBaseUrl, model: ecnuDefaultModel, apiKey: ecnuApiKey }) : ecnuProvider,
     { overwrite: true }
   )
 }
@@ -207,8 +220,8 @@ function registerIpcHandlers(): void {
       // 重新创建 provider 实例以立即生效
       if (payload.providerId === deepSeekProvider.id) {
         registerProvider(createDeepSeekProvider({ apiKey: payload.apiKey }), { overwrite: true })
-      } else if (payload.providerId === openAICompatibleProvider.id) {
-        registerProvider(createOpenAICompatibleProvider({ apiKey: payload.apiKey }), { overwrite: true })
+      } else if (payload.providerId === ECNU_PROVIDER_ID) {
+        registerProvider(createOpenAICompatibleProvider({ id: ECNU_PROVIDER_ID, name: 'ECNU 大模型', baseUrl: ecnuDefaultBaseUrl, model: ecnuDefaultModel, apiKey: payload.apiKey }), { overwrite: true })
       }
 
       return { ok: true, error: null }
@@ -225,6 +238,10 @@ function registerIpcHandlers(): void {
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) }
     }
+  })
+
+  ipcMain.handle('ai:getUsageStats', async () => {
+    return usageService.getUsageSummary()
   })
 
   ipcMain.handle('feed:list', async () => {
@@ -293,6 +310,13 @@ function registerIpcHandlers(): void {
       bilingual: payload.bilingual,
       providerId: payload.providerId,
       model: payload.model
+    }, (segment, done, total) => {
+      // Push each completed segment to renderer in real-time
+      try {
+        mainWindow?.webContents.send('ai:translationSegment', { entryId: payload.entryId, segment, done, total })
+      } catch {
+        // Window may already be destroyed.
+      }
     })
 
     usageService.recordUsage({

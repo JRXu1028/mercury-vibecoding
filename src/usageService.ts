@@ -86,4 +86,46 @@ export class UsageService {
     ).get(providerId) as { api_key_encrypted: Buffer | null } | undefined
     return row?.api_key_encrypted ?? null
   }
+
+  getUsageSummary(): {
+    totalTokens: number
+    totalCalls: number
+    byProvider: Array<{ providerId: string; callCount: number; totalTokens: number }>
+    byOperation: Array<{ operation: string; callCount: number; totalTokens: number }>
+    recentCalls: Array<{ providerId: string; operation: string; model: string; totalTokens: number; createdAt: string }>
+  } {
+    const totalRow = this.db.prepare(
+      'SELECT COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens FROM llm_usage'
+    ).get() as { calls: number; tokens: number }
+    const totalTokens = Number(totalRow.tokens) || 0
+    const totalCalls = Number(totalRow.calls) || 0
+
+    const byProvider = (this.db.prepare(
+      'SELECT provider_id, COUNT(*) as call_count, COALESCE(SUM(total_tokens), 0) as total_tokens FROM llm_usage GROUP BY provider_id ORDER BY total_tokens DESC'
+    ).all() as Array<{ provider_id: string; call_count: number; total_tokens: number }>).map((r) => ({
+      providerId: r.provider_id,
+      callCount: Number(r.call_count),
+      totalTokens: Number(r.total_tokens)
+    }))
+
+    const byOperation = (this.db.prepare(
+      'SELECT operation, COUNT(*) as call_count, COALESCE(SUM(total_tokens), 0) as total_tokens FROM llm_usage GROUP BY operation ORDER BY total_tokens DESC'
+    ).all() as Array<{ operation: string; call_count: number; total_tokens: number }>).map((r) => ({
+      operation: r.operation,
+      callCount: Number(r.call_count),
+      totalTokens: Number(r.total_tokens)
+    }))
+
+    const recentCalls = (this.db.prepare(
+      'SELECT provider_id, operation, model, total_tokens, created_at FROM llm_usage ORDER BY created_at DESC LIMIT 20'
+    ).all() as Array<{ provider_id: string; operation: string; model: string; total_tokens: number; created_at: string }>).map((r) => ({
+      providerId: r.provider_id,
+      operation: r.operation,
+      model: r.model,
+      totalTokens: Number(r.total_tokens),
+      createdAt: r.created_at
+    }))
+
+    return { totalTokens, totalCalls, byProvider, byOperation, recentCalls }
+  }
 }

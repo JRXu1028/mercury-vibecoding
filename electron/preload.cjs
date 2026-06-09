@@ -34,13 +34,32 @@ contextBridge.exposeInMainWorld('teamAApi', {
   saveOpmlFile: (content) => ipcRenderer.invoke('opml:saveFile', { content })
 })
 
+const translationSegmentListeners = new Set()
+
+ipcRenderer.on('ai:translationSegment', (_event, data) => {
+  for (const listener of translationSegmentListeners) {
+    try {
+      listener(data)
+    } catch {
+      // Ignore listener errors.
+    }
+  }
+})
+
 contextBridge.exposeInMainWorld('teamCApi', {
   getEntryContent: (entryId, options) => ipcRenderer.invoke('entry:content', { entryId, ...options }),
   summarizeEntry: (entryId, options) => ipcRenderer.invoke('ai:summarizeEntry', { entryId, ...options }),
   translateEntry: (entryId, options) => ipcRenderer.invoke('ai:translateEntry', { entryId, ...options }),
   listProviders: () => ipcRenderer.invoke('ai:listProviders'),
   testConnection: (providerId) => ipcRenderer.invoke('ai:testConnection', { providerId }),
-  saveProviderApiKey: (providerId, apiKey) => ipcRenderer.invoke('ai:saveProviderApiKey', { providerId, apiKey })
+  saveProviderApiKey: (providerId, apiKey) => ipcRenderer.invoke('ai:saveProviderApiKey', { providerId, apiKey }),
+  getUsageStats: () => ipcRenderer.invoke('ai:getUsageStats'),
+  onTranslationSegment: (callback) => {
+    translationSegmentListeners.add(callback)
+    return () => {
+      translationSegmentListeners.delete(callback)
+    }
+  }
 })
 
 contextBridge.exposeInMainWorld('teamBApi', {

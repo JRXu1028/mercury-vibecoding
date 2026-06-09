@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import type { UploadFile } from 'element-plus'
@@ -10,6 +10,15 @@ import { useFeedStore } from './stores/feed'
 import { teamAApi } from './api/client'
 
 const store = useFeedStore()
+
+const sidebarCollapsed = ref(false)
+const listCollapsed = ref(false)
+
+const gridColumns = computed(() => {
+  const sidebarWidth = sidebarCollapsed.value ? 44 : 280
+  const listWidth = listCollapsed.value ? 44 : 360
+  return `${sidebarWidth}px ${listWidth}px 1fr`
+})
 
 const addFeedDialogVisible = ref(false)
 const importDialogVisible = ref(false)
@@ -212,17 +221,19 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <main class="main-layout">
+    <main class="main-layout" :style="{ gridTemplateColumns: gridColumns }">
       <FeedSidebar
         :feeds="store.feeds"
         :selected-feed-id="store.selectedFeedId"
         :loading="store.isLoadingFeeds"
+        :collapsed="sidebarCollapsed"
         @select="(id) => { store.selectedFeedId = id; store.refreshEntries() }"
         @add="addFeedDialogVisible = true"
         @sync-all="syncCurrent"
         @import-opml="importDialogVisible = true"
         @export-opml="exportOpml"
         @remove="(feed) => removeFeed(feed.id, feed.title)"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
       />
 
       <EntryListPane
@@ -232,9 +243,11 @@ onBeforeUnmount(() => {
         :selected-entry-id="store.selectedEntryId"
         :loading="store.isLoadingEntries"
         :search-text="store.searchText"
+        :collapsed="listCollapsed"
         @select-entry="(entryId) => (store.selectedEntryId = entryId)"
         @update-search="updateSearch"
         @sync-current="syncCurrent"
+        @toggle-collapse="listCollapsed = !listCollapsed"
       />
 
       <EntryDetailPane :entry="store.selectedEntry" />

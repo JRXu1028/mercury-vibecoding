@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { teamCApi } from '../api/client'
-import type { ProviderInfo } from '../types'
+import type { ProviderInfo, UsageStats } from '../types'
 
 type TestStatus = 'idle' | 'testing' | 'ok' | 'fail'
 
@@ -20,6 +20,26 @@ const editProviderName = ref('')
 const editApiKey = ref('')
 const isSaving = ref(false)
 const saveError = ref('')
+
+const usageStats = ref<UsageStats | null>(null)
+const isLoadingUsage = ref(false)
+
+async function loadUsageStats(): Promise<void> {
+  isLoadingUsage.value = true
+  try {
+    usageStats.value = await teamCApi.getUsageStats()
+  } catch {
+    usageStats.value = null
+  } finally {
+    isLoadingUsage.value = false
+  }
+}
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
 
 async function loadProviders(): Promise<void> {
   isLoading.value = true
@@ -76,6 +96,7 @@ async function saveApiKey(): Promise<void> {
 
 onMounted(() => {
   void loadProviders()
+  void loadUsageStats()
 })
 </script>
 
@@ -159,6 +180,41 @@ onMounted(() => {
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- LLM Usage Stats -->
+    <div v-if="usageStats && usageStats.totalCalls > 0" class="usage-stats" v-loading="isLoadingUsage">
+      <div class="usage-stats-header">
+        <span class="usage-stats-title">用量统计</span>
+        <el-button :icon="Refresh" circle size="small" :loading="isLoadingUsage" @click="loadUsageStats" />
+      </div>
+
+      <div class="usage-summary">
+        <div class="usage-summary-card">
+          <span class="usage-num">{{ usageStats.totalCalls }}</span>
+          <span class="usage-label">总调用次数</span>
+        </div>
+        <div class="usage-summary-card">
+          <span class="usage-num">{{ formatTokens(usageStats.totalTokens) }}</span>
+          <span class="usage-label">总 Token 用量</span>
+        </div>
+      </div>
+
+      <div v-if="usageStats.byProvider.length > 0" class="usage-section">
+        <h4>按 Provider</h4>
+        <div v-for="p in usageStats.byProvider" :key="p.providerId" class="usage-row">
+          <span class="usage-row-name">{{ p.providerId }}</span>
+          <span class="usage-row-detail">{{ p.callCount }} 次 · {{ formatTokens(p.totalTokens) }} tokens</span>
+        </div>
+      </div>
+
+      <div v-if="usageStats.byOperation.length > 0" class="usage-section">
+        <h4>按操作类型</h4>
+        <div v-for="op in usageStats.byOperation" :key="op.operation" class="usage-row">
+          <span class="usage-row-name">{{ op.operation === 'summarize' ? '摘要' : '翻译' }}</span>
+          <span class="usage-row-detail">{{ op.callCount }} 次 · {{ formatTokens(op.totalTokens) }} tokens</span>
+        </div>
+      </div>
+    </div>
 
     <p class="provider-hint">
       API Key 可在此界面配置，加密存储在本地数据库中；也可在启动时通过 shell 环境变量注入。应用内不会明文展示密钥。
@@ -272,5 +328,80 @@ onMounted(() => {
   margin: 12px 0 0;
   font-size: 11px;
   color: var(--el-text-color-secondary, #909399);
+}
+
+.usage-stats {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter, #f5f7fa);
+  border-radius: 8px;
+}
+
+.usage-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.usage-stats-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.usage-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.usage-summary-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+}
+
+.usage-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.usage-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.usage-section {
+  margin-top: 10px;
+}
+
+.usage-section h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.usage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.usage-row-name {
+  font-weight: 500;
+}
+
+.usage-row-detail {
+  color: var(--muted);
+  font-size: 11px;
 }
 </style>
