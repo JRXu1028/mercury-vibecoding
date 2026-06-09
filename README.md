@@ -235,3 +235,4 @@ npm run start:desktop
 | 2026-06-05 | Team C | 完成 API Key 加密存储（Electron safeStorage）、Provider 连通性测试、Provider 管理面板 UI（ProviderPanel）。新增 3 个 IPC 通道（ai:listProviders、ai:testConnection、ai:saveProviderApiKey）、llm_providers 表新增 api_key_encrypted 列。 |
 | 2026-06-08 | Team D | 完成 Notes/Tags 前端 UI（EntryTags 组件、EntryNotes 组件），集成到 EntryDetailPane。演示测试数据文档（TEST_DATA.md）。 |
 | 2026-06-09 | Team C | 完成第三阶段：侧栏折叠、实时翻译推送（ai:translationSegment M→R 事件）、LLM 用量统计（ai:getUsageStats）、ECNU 大模型接入、翻译/摘要视图。 |
+| 2026-06-09 | Team B | 修正了 Reader 改为从 Markdown 渲染展示，新增并区分多套阅读样式模板，优化链接的应用内/浏览器打开方式。 |
