@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ChatLineRound, MagicStick, Refresh, Setting } from '@element-plus/icons-vue'
-import { teamCApi } from '../api/client'
+import { ElMessageBox } from 'element-plus'
+import { teamBApi, teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
+import { renderMarkdownToHtml } from '../utils/readerMarkdown'
 import ProviderPanel from './ProviderPanel.vue'
 import EntryTags from './EntryTags.vue'
 import EntryNotes from './EntryNotes.vue'
@@ -15,9 +17,13 @@ const content = ref<EntryContent | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const readerTheme = ref<'light' | 'sepia' | 'dark'>('light')
+const readerTemplate = ref<'classic' | 'editorial' | 'technical'>('classic')
 const activeView = ref<'reader' | 'markdown' | 'summary' | 'translation'>('reader')
 const fontSize = ref(17)
 const lineHeight = ref(1.7)
+const inAppLinkUrl = ref('')
+const inAppDialogVisible = ref(false)
+const inAppFallbackMessage = ref('')
 const isSummarizing = ref(false)
 const isTranslating = ref(false)
 const aiErrorMessage = ref('')
@@ -41,6 +47,18 @@ const readerStyle = computed(() => ({
   fontSize: `${fontSize.value}px`,
   lineHeight: String(lineHeight.value)
 }))
+
+const renderedReaderHtml = computed(() => {
+  if (!content.value) {
+    return ''
+  }
+  return renderMarkdownToHtml(content.value.markdown)
+})
+
+const readerClass = computed(() => [
+  `reader-${readerTheme.value}`,
+  `reader-template-${readerTemplate.value}`
+])
 
 const hasAiResult = computed(() => Boolean(summaryResult.value || translationResult.value || aiErrorMessage.value))
 const cleanedMarkdown = computed(() => content.value?.markdown.trim() ?? '')
@@ -233,6 +251,61 @@ async function loadContent(forceRefresh = false): Promise<void> {
   }
 }
 
+async function openLinkInApp(url: string): Promise<void> {
+  try {
+    const openedInDesktopWindow = await teamBApi.openInApp(url)
+    if (openedInDesktopWindow) {
+      return
+    }
+  } catch (error) {
+    inAppFallbackMessage.value = error instanceof Error ? error.message : String(error)
+  }
+
+  inAppLinkUrl.value = url
+  inAppFallbackMessage.value = inAppFallbackMessage.value || 'This site may block embedded viewing.'
+  inAppDialogVisible.value = true
+}
+
+async function openLinkInBrowser(url: string): Promise<void> {
+  await teamBApi.openExternal(url)
+}
+
+async function chooseOpenLink(url: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm(url, 'Open link', {
+      confirmButtonText: 'Open in App',
+      cancelButtonText: 'Open in Browser',
+      distinguishCancelAndClose: true,
+      type: 'info'
+    })
+    void openLinkInApp(url)
+  } catch (action) {
+    if (action === 'cancel') {
+      void openLinkInBrowser(url)
+    }
+  }
+}
+
+function toAbsoluteUrl(href: string): string {
+  const baseUrl = content.value?.url || props.entry?.url || window.location.href
+  return new URL(href, baseUrl).toString()
+}
+
+function handleReaderClick(event: MouseEvent): void {
+  const target = event.target
+  if (!(target instanceof Element)) {
+    return
+  }
+
+  const link = target.closest('a[href]')
+  if (!(link instanceof HTMLAnchorElement)) {
+    return
+  }
+
+  event.preventDefault()
+  void chooseOpenLink(toAbsoluteUrl(link.getAttribute('href') || link.href))
+}
+
 async function loadProviders(): Promise<void> {
   try {
     const list = await teamCApi.listProviders()
@@ -413,7 +486,7 @@ watch(aiProviderId, () => {
             title="Refresh cleaned content"
             @click="loadContent(true)"
           />
-          <a :href="entry.url" target="_blank" rel="noreferrer">Open Source</a>
+          <el-button link type="primary" @click="chooseOpenLink(entry.url)">Open Source</el-button>
         </div>
       </header>
 
@@ -438,6 +511,11 @@ watch(aiProviderId, () => {
             { label: 'Dark', value: 'dark' }
           ]"
         />
+        <el-select v-model="readerTemplate" size="small" style="width: 128px">
+          <el-option value="classic" label="Classic" />
+          <el-option value="editorial" label="Editorial" />
+          <el-option value="technical" label="Technical" />
+        </el-select>
         <el-input-number v-model="fontSize" :min="12" :max="18" size="small" controls-position="right" />
         <el-input-number v-model="lineHeight" :min="1.4" :max="2.2" :step="0.1" size="small" controls-position="right" />
       </div>
@@ -503,16 +581,17 @@ watch(aiProviderId, () => {
           <article
             v-if="activeView === 'reader'"
             class="reader-article"
-            :class="`reader-${readerTheme}`"
+            :class="readerClass"
             :style="readerStyle"
-            v-html="content.html"
+            @click="handleReaderClick"
+            v-html="renderedReaderHtml"
           />
 
           <!-- Markdown View -->
           <pre
             v-else-if="activeView === 'markdown'"
             class="reader-markdown"
-            :class="`reader-${readerTheme}`"
+            :class="readerClass"
             :style="readerStyle"
           >{{ content.markdown }}</pre>
 
@@ -611,6 +690,25 @@ watch(aiProviderId, () => {
 
     <el-empty v-else description="Select an entry" :image-size="88" />
   </section>
+
+  <el-dialog v-model="inAppDialogVisible" title="In-App Browser" width="80%" top="6vh">
+    <div class="in-app-toolbar">
+      <el-alert
+        v-if="inAppFallbackMessage"
+        :title="inAppFallbackMessage"
+        type="warning"
+        show-icon
+        :closable="false"
+      />
+      <el-button type="primary" plain @click="openLinkInBrowser(inAppLinkUrl)">Open in Browser</el-button>
+    </div>
+    <iframe
+      v-if="inAppLinkUrl"
+      class="in-app-browser"
+      :src="inAppLinkUrl"
+      sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
+    />
+  </el-dialog>
 
   <el-dialog
     v-model="providerPanelVisible"

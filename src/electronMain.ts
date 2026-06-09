@@ -23,7 +23,7 @@ import type { EntryContent } from './models.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
-const { app, BrowserWindow, dialog, ipcMain, safeStorage } = require('electron') as typeof import('electron')
+const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require('electron') as typeof import('electron')
 
 const preloadPath = path.resolve(__dirname, '..', 'electron', 'preload.cjs')
 const rendererDevURL = process.env.MERCURY_RENDERER_URL ?? 'http://127.0.0.1:5173'
@@ -32,6 +32,8 @@ const rawSyncMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '10')
 const autoSyncIntervalMinutes = Number.isFinite(rawSyncMinutes) && rawSyncMinutes > 0 ? rawSyncMinutes : 10
 const useDevServer = Boolean(process.env.MERCURY_RENDERER_URL)
 const defaultTranslationTargetLanguage = 'zh-CN'
+const externalUrlProtocols = new Set(['http:', 'https:', 'mailto:'])
+const inAppUrlProtocols = new Set(['http:', 'https:'])
 
 // ECNU Provider config
 const ECNU_PROVIDER_ID = 'ecnu'
@@ -178,6 +180,39 @@ function createMainWindow(): ElectronBrowserWindow {
   return window
 }
 
+function assertAllowedUrl(rawUrl: string, allowedProtocols: Set<string>): URL {
+  const url = new URL(rawUrl)
+  if (!allowedProtocols.has(url.protocol)) {
+    throw new Error(`Unsupported link protocol: ${url.protocol}`)
+  }
+  return url
+}
+
+function openInAppWindow(rawUrl: string): void {
+  const url = assertAllowedUrl(rawUrl, inAppUrlProtocols)
+  const window = new BrowserWindow({
+    width: 1120,
+    height: 820,
+    minWidth: 860,
+    minHeight: 620,
+    title: url.toString(),
+    parent: mainWindow ?? undefined,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true
+    }
+  })
+
+  window.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+    void shell.openExternal(targetUrl)
+    return { action: 'deny' }
+  })
+
+  void window.loadURL(url.toString())
+}
+
 function initServices(): void {
   const userDataPath = app.getPath('userData')
   logger.setLogDir(path.resolve(userDataPath, 'logs'))
@@ -276,6 +311,17 @@ function registerIpcHandlers(): void {
     return await contentService.getEntryContent(payload.entryId, {
       forceRefresh: payload.forceRefresh
     })
+  })
+
+  ipcMain.handle('link:openExternal', async (_event: IpcMainInvokeEvent, payload: { url: string }) => {
+    const url = assertAllowedUrl(payload.url, externalUrlProtocols)
+    await shell.openExternal(url.toString())
+    return { ok: true }
+  })
+
+  ipcMain.handle('link:openInApp', async (_event: IpcMainInvokeEvent, payload: { url: string }) => {
+    openInAppWindow(payload.url)
+    return { ok: true }
   })
 
   ipcMain.handle('ai:summarizeEntry', async (_event: IpcMainInvokeEvent, payload: AiSummarizeEntryPayload) => {

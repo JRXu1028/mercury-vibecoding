@@ -67,6 +67,8 @@ contextBridge.exposeInMainWorld('teamBApi', {
   createNote: (entryId, content, title) => ipcRenderer.invoke('notes:create', { entryId, content, title }),
   updateNote: (noteId, fields) => ipcRenderer.invoke('notes:update', { noteId, ...fields }),
   deleteNote: (noteId) => ipcRenderer.invoke('notes:delete', { noteId }),
+  openExternal: (url) => ipcRenderer.invoke('link:openExternal', { url }),
+  openInApp: (url) => ipcRenderer.invoke('link:openInApp', { url }),
   listTags: () => ipcRenderer.invoke('tags:list'),
   createTag: (name, color) => ipcRenderer.invoke('tags:create', { name, color }),
   updateTag: (tagId, fields) => ipcRenderer.invoke('tags:update', { tagId, ...fields }),

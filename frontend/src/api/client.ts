@@ -229,6 +229,22 @@ export const teamBApi = {
     await request(`/api/notes/${noteId}`, { method: 'DELETE' })
   },
 
+  async openExternal(url: string): Promise<void> {
+    if (bridgeB) {
+      await bridgeB.openExternal(url)
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  },
+
+  async openInApp(url: string): Promise<boolean> {
+    if (bridgeB) {
+      await bridgeB.openInApp(url)
+      return true
+    }
+    return false
+  },
+
   async listTags(): Promise<TagWithCount[]> {
     if (bridgeB) {
       return await bridgeB.listTags()

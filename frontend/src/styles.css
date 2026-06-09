@@ -256,6 +256,8 @@ body,
 .reader-article video {
   max-width: 100%;
   height: auto;
+  display: block;
+  margin: 16px auto;
 }
 
 .reader-article pre,
@@ -273,6 +275,80 @@ body,
   border: 0;
 }
 
+.reader-template-classic {
+  max-width: 760px;
+  font-family: "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+.reader-template-classic img {
+  border-radius: 4px;
+}
+
+.reader-template-classic code {
+  padding: 0.12em 0.32em;
+  border-radius: 4px;
+  background: rgba(15, 109, 181, 0.1);
+}
+
+.reader-template-editorial {
+  font-family: Georgia, "Times New Roman", "Songti SC", serif;
+}
+
+.reader-template-editorial img {
+  border-radius: 0;
+  box-shadow: 0 10px 28px rgba(22, 32, 42, 0.14);
+}
+
+.reader-template-editorial blockquote {
+  margin: 1.2em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--brand);
+  color: inherit;
+}
+
+.reader-template-technical {
+  max-width: 920px;
+  font-family: "SF Mono", "Cascadia Code", Menlo, "PingFang SC", monospace;
+  border-left: 4px solid #2f81f7;
+}
+
+.reader-template-technical h1,
+.reader-template-technical h2,
+.reader-template-technical h3 {
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid rgba(47, 129, 247, 0.28);
+}
+
+.reader-template-technical p,
+.reader-template-technical li {
+  line-height: inherit;
+}
+
+.reader-template-technical img {
+  padding: 8px;
+  border: 1px solid rgba(47, 129, 247, 0.24);
+  border-radius: 2px;
+  background: #f6f8fa;
+}
+
+.reader-template-technical pre {
+  overflow-x: auto;
+  padding: 14px;
+  border-radius: 6px;
+  background: #101820;
+  color: #edf5ff;
+}
+
+.reader-template-technical code {
+  font-family: inherit;
+}
+
+.reader-template-technical :not(pre) > code {
+  padding: 0.12em 0.34em;
+  border-radius: 4px;
+  background: rgba(16, 24, 32, 0.08);
+}
+
 .reader-sepia {
   color: #2f2a24;
   background: #fbf3df;
@@ -285,6 +361,39 @@ body,
 
 .reader-dark a {
   color: #7cc7ff;
+}
+
+.reader-dark.reader-template-classic code,
+.reader-dark.reader-template-technical :not(pre) > code {
+  background: rgba(124, 199, 255, 0.16);
+}
+
+.reader-dark.reader-template-technical {
+  border-left-color: #7cc7ff;
+}
+
+.reader-dark.reader-template-technical img {
+  border-color: rgba(124, 199, 255, 0.32);
+  background: #101820;
+}
+
+.in-app-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.in-app-toolbar .el-alert {
+  flex: 1;
+}
+
+.in-app-browser {
+  width: 100%;
+  height: 72vh;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 .reader-fallback {
