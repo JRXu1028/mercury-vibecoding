@@ -10,6 +10,7 @@ interface EntryContentRow {
   id: number
   url: string
   title: string
+  summary: string | null
   content_html: string | null
   content_md: string | null
   content_fetched_at: string | null
@@ -27,6 +28,17 @@ function ensureOkResponse(response: Response, url: string): void {
   if (!response.ok) {
     throw new Error(`Failed to fetch article (${response.status}): ${url}`)
   }
+}
+
+function fetchFailureReason(error: unknown): string {
+  if (error instanceof Error) {
+    const match = error.message.match(/\((\d{3})\)/)
+    if (match) {
+      return `Article fetch failed (${match[1]}).`
+    }
+    return `Article fetch failed: ${error.message}`
+  }
+  return `Article fetch failed: ${String(error)}`
 }
 
 function sanitizeHtml(html: string, baseUrl: string): string {
@@ -68,6 +80,29 @@ function promotePrimaryHeading(html: string, url: string, title: string): string
   return normalized
 }
 
+function buildFallbackHtml(entry: EntryContentRow, reason: string): string {
+  const summary = entry.summary?.trim() || 'No RSS summary is available for this article.'
+  return sanitizeHtml(`
+    <article>
+      <h1>${entry.title}</h1>
+      <p><strong>${reason}</strong></p>
+      <p>${summary}</p>
+      <p><a href="${entry.url}">Open original article</a></p>
+    </article>
+  `, entry.url)
+}
+
+function contentFromHtml(entry: EntryContentRow, html: string, title: string, fetchedAt: string): EntryContent {
+  return {
+    entryId: entry.id,
+    title,
+    url: entry.url,
+    html,
+    markdown: turndown.turndown(html).trim(),
+    fetchedAt
+  }
+}
+
 export class ContentService {
   private readonly db: DatabaseSync
 
@@ -92,39 +127,42 @@ export class ContentService {
       }
     }
 
-    const response = await fetch(entry.url, {
-      headers: {
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'User-Agent': 'Mercury Vibecoding/0.1 RSS Reader'
-      }
-    })
-    ensureOkResponse(response, entry.url)
-
-    const rawHtml = await response.text()
-    const readable = extractReadableContent(rawHtml, entry.url, entry.title)
-    const html = sanitizeHtml(promotePrimaryHeading(readable.html, entry.url, readable.title), entry.url)
-    const markdown = turndown.turndown(html).trim()
+    let content: EntryContent
     const fetchedAt = nowIso()
+    try {
+      const response = await fetch(entry.url, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+          'Upgrade-Insecure-Requests': '1',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) MercuryVibecoding/0.1 Safari/537.36'
+        }
+      })
+      ensureOkResponse(response, entry.url)
+
+      const rawHtml = await response.text()
+      const readable = extractReadableContent(rawHtml, entry.url, entry.title)
+      const html = sanitizeHtml(promotePrimaryHeading(readable.html, entry.url, readable.title), entry.url)
+      content = contentFromHtml(entry, html, readable.title, fetchedAt)
+    } catch (error) {
+      const html = buildFallbackHtml(entry, fetchFailureReason(error))
+      content = contentFromHtml(entry, html, entry.title, fetchedAt)
+    }
 
     this.db.prepare(`
       UPDATE entries
       SET content_html = ?, content_md = ?, content_fetched_at = ?, updated_at = ?
       WHERE id = ?
-    `).run(html, markdown, fetchedAt, fetchedAt, entry.id)
+    `).run(content.html, content.markdown, fetchedAt, fetchedAt, entry.id)
 
-    return {
-      entryId: entry.id,
-      title: readable.title,
-      url: entry.url,
-      html,
-      markdown,
-      fetchedAt
-    }
+    return content
   }
 
   private getEntryRow(entryId: number): EntryContentRow | undefined {
     return this.db.prepare(`
-      SELECT id, url, title, content_html, content_md, content_fetched_at
+      SELECT id, url, title, summary, content_html, content_md, content_fetched_at
       FROM entries
       WHERE id = ?
     `).get(entryId) as EntryContentRow | undefined

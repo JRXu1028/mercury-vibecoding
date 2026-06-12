@@ -91,4 +91,26 @@ describe('Team B content cleaning flow', () => {
     expect(cached.markdown).toBe(content.markdown)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   }, 20_000)
+
+  it('falls back to RSS summary when the article page blocks fetching', async () => {
+    const entryId = await seedEntry()
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+      text: async () => 'Forbidden'
+    } as Response)
+
+    const content = await contentService.getEntryContent(entryId)
+    const cached = await contentService.getEntryContent(entryId)
+
+    expect(content.title).toBe('Clean Me')
+    expect(content.html).toContain('Article fetch failed')
+    expect(content.html).toContain('Summary from RSS')
+    expect(content.markdown).toContain('# Clean Me')
+    expect(content.markdown).toContain('Article fetch failed (403)')
+    expect(content.markdown).toContain('Summary from RSS')
+    expect(cached.markdown).toBe(content.markdown)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })
