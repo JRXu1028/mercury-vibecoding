@@ -10,12 +10,13 @@ import { NotesService } from './notesService.js'
 import { OPMLService } from './opmlService.js'
 import { TagsService } from './tagsService.js'
 import { UsageService } from './usageService.js'
+import { AiResultService } from './aiResultService.js'
 import { logger } from './logger.js'
 import { getProvider, hasProvider, listProviderIds, registerProvider } from './ai/providerRegistry.js'
 import { deepSeekProvider, createDeepSeekProvider } from './ai/providers/deepSeekProvider.js'
 import { mockProvider } from './ai/providers/mockProvider.js'
 import { createOpenAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
-import { summarizeArticle } from './ai/summaryAgent.js'
+import { summarizeArticleStream } from './ai/summaryAgent.js'
 import { translateArticle } from './ai/translationAgent.js'
 import type { ArticleInput, SummaryOptions, TranslationOptions } from './ai/types.js'
 import type { EntryContent } from './models.js'
@@ -47,6 +48,7 @@ let notesService: NotesService
 let opmlService: OPMLService
 let tagsService: TagsService
 let usageService: UsageService
+let aiResultService: AiResultService
 let mainWindow: ElectronBrowserWindow | null = null
 let autoSyncTimer: NodeJS.Timeout | null = null
 let isSyncing = false
@@ -224,6 +226,7 @@ function initServices(): void {
   opmlService = new OPMLService(feedService)
   tagsService = new TagsService(database)
   usageService = new UsageService(database)
+  aiResultService = new AiResultService(database)
 }
 
 function registerIpcHandlers(): void {
@@ -239,7 +242,8 @@ function registerIpcHandlers(): void {
         defaultModel: row?.defaultModel ?? null,
         apiKeyEnvVar: row?.apiKeyEnvVar ?? null,
         hasStoredKey: row?.hasStoredKey ?? false,
-        available: hasEnvKey || (row?.hasStoredKey ?? false) || !row?.apiKeyEnvVar
+        available: hasEnvKey || (row?.hasStoredKey ?? false) || !row?.apiKeyEnvVar,
+        capabilities: getProvider(id).capabilities
       }
     })
   })
@@ -277,6 +281,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('ai:getUsageStats', async () => {
     return usageService.getUsageSummary()
+  })
+
+  ipcMain.handle('ai:getLatestResults', async (_event: IpcMainInvokeEvent, payload: { entryId: number }) => {
+    return aiResultService.getLatestResults(payload.entryId)
   })
 
   ipcMain.handle('feed:list', async () => {
@@ -327,12 +335,34 @@ function registerIpcHandlers(): void {
   ipcMain.handle('ai:summarizeEntry', async (_event: IpcMainInvokeEvent, payload: AiSummarizeEntryPayload) => {
     const article = await getArticleInputForEntry(payload)
 
-    const result = await summarizeArticle(article, {
+    const result = await summarizeArticleStream(article, {
       language: payload.language,
       length: payload.length,
       providerId: payload.providerId,
       model: payload.model
+    }, (chunk, accumulated) => {
+      try {
+        mainWindow?.webContents.send('ai:summaryChunk', {
+          entryId: payload.entryId,
+          chunk,
+          accumulated,
+          done: false
+        })
+      } catch {
+        // Window may already be destroyed.
+      }
     })
+
+    try {
+      mainWindow?.webContents.send('ai:summaryChunk', {
+        entryId: payload.entryId,
+        chunk: '',
+        accumulated: result.summary,
+        done: true
+      })
+    } catch {
+      // Window may already be destroyed.
+    }
 
     usageService.recordUsage({
       providerId: result.providerId,
@@ -343,6 +373,7 @@ function registerIpcHandlers(): void {
       completionTokens: result.usage.completionTokens,
       totalTokens: result.usage.totalTokens
     })
+    aiResultService.saveSummary(payload.entryId, result)
 
     return result
   })
@@ -374,6 +405,9 @@ function registerIpcHandlers(): void {
       completionTokens: result.usage.completionTokens,
       totalTokens: result.usage.totalTokens
     })
+    if (result.segments.every((segment) => segment.status === 'success')) {
+      aiResultService.saveTranslation(payload.entryId, result, payload.sourceLanguage)
+    }
 
     return result
   })

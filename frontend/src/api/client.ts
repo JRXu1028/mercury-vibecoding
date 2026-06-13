@@ -3,9 +3,11 @@ import type {
   EntryContent,
   EntryItem,
   FeedItem,
+  LatestAiResults,
   NoteItem,
   ProviderInfo,
   SummarizeEntryOptions,
+  SummaryChunkEvent,
   SummaryResult,
   SyncResponse,
   TagItem,
@@ -180,9 +182,24 @@ export const teamCApi = {
     throw new Error('用量统计仅在桌面端可用。')
   },
 
+  async getLatestAiResults(entryId: number): Promise<LatestAiResults> {
+    if (bridgeC) {
+      return await bridgeC.getLatestAiResults(entryId)
+    }
+    return { summary: null, translation: null }
+  },
+
   onTranslationSegment(callback: (data: TranslationSegmentEvent) => void): () => void {
     if (bridgeC) {
       return bridgeC.onTranslationSegment(callback)
+    }
+    // HTTP mode: no-op, return empty cleanup
+    return () => {}
+  },
+
+  onSummaryChunk(callback: (data: SummaryChunkEvent) => void): () => void {
+    if (bridgeC) {
+      return bridgeC.onSummaryChunk(callback)
     }
     // HTTP mode: no-op, return empty cleanup
     return () => {}

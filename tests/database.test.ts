@@ -35,6 +35,8 @@ describe('AppDatabase', () => {
     expect(names).toContain('entries')
     expect(names).toContain('llm_providers')
     expect(names).toContain('llm_usage')
+    expect(names).toContain('ai_summaries')
+    expect(names).toContain('ai_translations')
     expect(names).toContain('notes')
     expect(names).toContain('tags')
     expect(names).toContain('entry_tags')

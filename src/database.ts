@@ -83,6 +83,37 @@ export class AppDatabase {
         FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
       );
 
+      CREATE TABLE IF NOT EXISTS ai_summaries (
+        entry_id INTEGER PRIMARY KEY,
+        provider_id TEXT NOT NULL,
+        model TEXT NOT NULL,
+        language TEXT NOT NULL,
+        length TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        prompt_tokens INTEGER NOT NULL,
+        completion_tokens INTEGER NOT NULL,
+        total_tokens INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_translations (
+        entry_id INTEGER PRIMARY KEY,
+        provider_id TEXT NOT NULL,
+        model TEXT NOT NULL,
+        source_language TEXT,
+        target_language TEXT NOT NULL,
+        bilingual INTEGER NOT NULL,
+        segments_json TEXT NOT NULL,
+        prompt_tokens INTEGER NOT NULL,
+        completion_tokens INTEGER NOT NULL,
+        total_tokens INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
+      );
+
       CREATE TABLE IF NOT EXISTS notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         entry_id INTEGER NOT NULL,
