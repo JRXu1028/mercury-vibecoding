@@ -52,6 +52,10 @@ function createMockContent(messages: LLMMessage[], model: string): string {
 export const mockProvider: LLMProvider = {
   id: MOCK_PROVIDER_ID,
   name: 'Mock LLM Provider',
+  capabilities: {
+    chat: true,
+    streamChat: true,
+  },
 
   async testConnection() {
     return true
@@ -64,6 +68,27 @@ export const mockProvider: LLMProvider = {
   async chat(messages, options) {
     const model = selectModel(options)
     const content = createMockContent(messages, model)
+
+    return {
+      content,
+      model,
+      providerId: MOCK_PROVIDER_ID,
+      usage: createMockUsage(messages, content),
+      createdAt: new Date().toISOString(),
+    }
+  },
+
+  async streamChat(messages, options, onChunk) {
+    const model = selectModel(options)
+    const content = createMockContent(messages, model)
+    const midpoint = Math.ceil(content.length / 2)
+    const chunks = [content.slice(0, midpoint), content.slice(midpoint)].filter(
+      (chunk) => chunk.length > 0,
+    )
+
+    for (const chunk of chunks) {
+      onChunk({ content: chunk })
+    }
 
     return {
       content,

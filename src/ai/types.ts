@@ -38,12 +38,27 @@ export interface LLMChatOptions {
   maxTokens?: number
 }
 
+export interface LLMProviderCapabilities {
+  chat: true
+  streamChat: true
+}
+
+export interface LLMStreamChunk {
+  content: string
+}
+
 export interface LLMProvider {
   id: string
   name: string
+  capabilities: LLMProviderCapabilities
   testConnection: () => Promise<boolean>
   listModels: () => Promise<string[]>
   chat: (messages: LLMMessage[], options?: LLMChatOptions) => Promise<LLMResponse>
+  streamChat: (
+    messages: LLMMessage[],
+    options: LLMChatOptions | undefined,
+    onChunk: (chunk: LLMStreamChunk) => void,
+  ) => Promise<LLMResponse>
 }
 
 export type SummaryLength = 'short' | 'medium' | 'long'
@@ -93,4 +108,9 @@ export interface TranslationResult {
   model: string
   createdAt: string
   usage: LLMUsage
+}
+
+export interface LatestAiResults {
+  summary: SummaryResult | null
+  translation: TranslationResult | null
 }

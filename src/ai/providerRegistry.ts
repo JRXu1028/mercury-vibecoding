@@ -16,6 +16,22 @@ export function registerProvider(
     throw new Error('Cannot register an AI provider with an empty id.')
   }
 
+  if (provider.capabilities?.chat !== true) {
+    throw new Error(`AI provider "${provider.id}" must support chat.`)
+  }
+
+  if (provider.capabilities?.streamChat !== true) {
+    throw new Error(`AI provider "${provider.id}" must support streamChat.`)
+  }
+
+  if (typeof provider.chat !== 'function') {
+    throw new Error(`AI provider "${provider.id}" must implement chat.`)
+  }
+
+  if (typeof provider.streamChat !== 'function') {
+    throw new Error(`AI provider "${provider.id}" must implement streamChat.`)
+  }
+
   const existingProvider = providers.get(provider.id)
   if (existingProvider && !options.overwrite) {
     throw new Error(

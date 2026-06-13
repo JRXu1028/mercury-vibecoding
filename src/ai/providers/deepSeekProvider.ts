@@ -1,4 +1,5 @@
 import type { LLMChatOptions, LLMMessage, LLMProvider, LLMUsage } from '../types.js'
+import { readOpenAICompatibleStream } from './openAIStream.js'
 
 export const DEEPSEEK_PROVIDER_ID = 'deepseek'
 export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-v4-flash'
@@ -75,6 +76,10 @@ export function createDeepSeekProvider(
   return {
     id: DEEPSEEK_PROVIDER_ID,
     name: 'DeepSeek Provider',
+    capabilities: {
+      chat: true,
+      streamChat: true,
+    },
 
     async testConnection() {
       const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -135,6 +140,32 @@ export function createDeepSeekProvider(
         usage: toUsage(data.usage),
         createdAt: new Date().toISOString(),
       }
+    },
+
+    async streamChat(messages, chatOptions, onChunk) {
+      const model = chatOptions?.model ?? defaultModel
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${readApiKey(options.apiKey)}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: chatOptions?.temperature,
+          max_tokens: chatOptions?.maxTokens,
+          stream: true,
+          stream_options: { include_usage: true },
+          thinking: { type: 'disabled' },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek stream chat completion failed: ${await readErrorMessage(response)}`)
+      }
+
+      return readOpenAICompatibleStream(response, model, DEEPSEEK_PROVIDER_ID, onChunk)
     },
   }
 }
