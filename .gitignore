@@ -9,6 +9,10 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+# electron-builder buildResources (icons etc.) — keep under version control
+!build/icon.png
+!build/icon.icns
+!build/icon.ico
 develop-eggs/
 dist/
 downloads/

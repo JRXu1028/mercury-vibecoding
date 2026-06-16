@@ -241,3 +241,4 @@ npm run start:desktop
 | 2026-06-16 | Team B | 完成 Reader 体验修复：应用内链接打开的浏览窗口添加了前进后退刷新功能、应用重命名为Vibe Reader，优化了可缩放内嵌浏览窗口，处理了部分条目403 fallback。|
 | 2026-06-13 | Team C | 完成流式摘要生成（SSE 推送）与 AI 结果持久化展示；LLM Provider 流式输出适配。 |
 | 2026-06-16 | Team D | 拉取最新 main（8 commit），44/44 测试通过，打包 macOS arm64 dmg/zip，发布 v0.2.0 Release。 |
+| 2026-06-16 | Team D | 配置自定义应用图标（`build/icon.png`），版本升至 v0.2.1，重新打包发布。 |

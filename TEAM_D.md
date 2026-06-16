@@ -272,6 +272,7 @@ npm run dist
 |------|------|--------|----------|
 | v0.1.0 | macOS arm64 | Mercury Vibecoding | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
 | v0.2.0 | macOS arm64 | Vibe Reader | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.0) |
+| v0.2.1 | macOS arm64 | Vibe Reader (含应用图标) | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.1) |
 
 ### 6.4 用户安装说明
 
@@ -293,7 +294,7 @@ export DEEPSEEK_API_KEY=your-key
 
 - 当前仅打包了 macOS arm64 版本；Windows/Linux 需在对应平台执行 `npm run dist`
 - 未配置代码签名和公证 (notarization)，macOS 需手动绕过 Gatekeeper
-- 应用图标使用 Electron 默认图标，尚未配置自定义图标
+- ~~应用图标使用 Electron 默认图标，尚未配置自定义图标~~ → v0.2.1 起使用自定义图标（`build/icon.png`，1024×1024）
 
 ## 7. 待办 (按优先级)
 
@@ -313,4 +314,5 @@ export DEEPSEEK_API_KEY=your-key
 | P3 | notes/tags 前端 UI 组件 | ✅ 完成 |
 | P3 | LLM 用量查询 IPC + 前端展示 | ✅ 完成 (Team C 实现) |
 | P3 | Windows/Linux 打包发布 | ✅ 完成 (CI 自动构建) |
-| P3 | 应用图标 + 代码签名 | ⬜ 待做 |
+| P3 | 应用图标 | ✅ 完成 (v0.2.1) |
+| P3 | 代码签名 + 公证 | ⬜ 待做（需 Apple Developer 证书） |

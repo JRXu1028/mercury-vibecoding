@@ -6,8 +6,8 @@
 
 | 平台 | 下载文件 | 架构 |
 |------|----------|------|
-| macOS | `Vibe Reader-0.1.0-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
-| Windows | `Vibe Reader-0.1.0-setup.exe` | x64 |
+| macOS | `Vibe Reader-0.2.1-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
+| Windows | `Vibe Reader-0.2.1-setup.exe` | x64 |
 
 > Intel Mac 用户：当前仅提供 arm64 版本。如需 Intel 版本，请在 Intel Mac 上 `git clone` 后执行 `npm install && npm run dist`。
 >
