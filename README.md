@@ -237,3 +237,5 @@ npm run start:desktop
 | 2026-06-09 | Team C | 完成第三阶段：侧栏折叠、实时翻译推送（ai:translationSegment M→R 事件）、LLM 用量统计（ai:getUsageStats）、ECNU 大模型接入、翻译/摘要视图。 |
 | 2026-06-09 | Team B | 修正了 Reader 改为从 Markdown 渲染展示，新增并区分多套阅读样式模板，优化链接的应用内/浏览器打开方式。 |
 | 2026-06-16 | Team B | 完成 Reader 体验修复：应用内链接打开的浏览窗口添加了前进后退刷新功能、应用重命名为Vibe Reader，优化了可缩放内嵌浏览窗口，处理了部分条目403 fallback。|
+| 2026-06-13 | Team C | 完成流式摘要生成（SSE 推送）与 AI 结果持久化展示；LLM Provider 流式输出适配。 |
+| 2026-06-16 | Team D | 拉取最新 main（8 commit），44/44 测试通过，打包 macOS arm64 dmg/zip，发布 v0.2.0 Release。 |
