@@ -1063,7 +1063,7 @@ watch(aiProviderId, () => {
   min-height: 360px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
@@ -1079,6 +1079,7 @@ watch(aiProviderId, () => {
   gap: 10px;
   padding: 6px 10px;
   border-bottom: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
   background: #ffffff;
 }
 
@@ -1102,6 +1103,7 @@ watch(aiProviderId, () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 0 0 8px 8px;
 }
 
 .embedded-browser-close {
@@ -1139,65 +1141,65 @@ watch(aiProviderId, () => {
 
 .embedded-browser-resizer.is-n,
 .embedded-browser-resizer.is-s {
-  left: 12px;
-  right: 12px;
-  height: 10px;
+  left: 18px;
+  right: 18px;
+  height: 12px;
   cursor: ns-resize;
 }
 
 .embedded-browser-resizer.is-n {
-  top: 0;
+  top: -12px;
 }
 
 .embedded-browser-resizer.is-s {
-  bottom: 0;
+  bottom: -12px;
 }
 
 .embedded-browser-resizer.is-e,
 .embedded-browser-resizer.is-w {
-  top: 12px;
-  bottom: 12px;
-  width: 10px;
+  top: 18px;
+  bottom: 18px;
+  width: 12px;
   cursor: ew-resize;
 }
 
 .embedded-browser-resizer.is-e {
-  right: 0;
+  right: -12px;
 }
 
 .embedded-browser-resizer.is-w {
-  left: 0;
+  left: -12px;
 }
 
 .embedded-browser-resizer.is-ne,
 .embedded-browser-resizer.is-nw,
 .embedded-browser-resizer.is-se,
 .embedded-browser-resizer.is-sw {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .embedded-browser-resizer.is-ne {
-  top: 0;
-  right: 0;
+  top: -12px;
+  right: -12px;
   cursor: nesw-resize;
 }
 
 .embedded-browser-resizer.is-nw {
-  top: 0;
-  left: 0;
+  top: -12px;
+  left: -12px;
   cursor: nwse-resize;
 }
 
 .embedded-browser-resizer.is-se {
-  right: 0;
-  bottom: 0;
+  right: -12px;
+  bottom: -12px;
   cursor: nwse-resize;
 }
 
 .embedded-browser-resizer.is-sw {
-  bottom: 0;
-  left: 0;
+  bottom: -12px;
+  left: -12px;
   cursor: nesw-resize;
 }
 
