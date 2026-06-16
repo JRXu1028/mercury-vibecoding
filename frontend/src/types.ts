@@ -190,7 +190,7 @@ export interface TeamBBridgeApi {
   updateNote(noteId: number, fields: { title?: string | null; content?: string }): Promise<NoteItem>
   deleteNote(noteId: number): Promise<void>
   openExternal(url: string): Promise<{ ok: true }>
-  openInApp(url: string): Promise<{ ok: true }>
+  openInApp(url: string): Promise<{ ok: true; url: string }>
   listTags(): Promise<TagWithCount[]>
   createTag(name: string, color?: string): Promise<TagItem>
   updateTag(tagId: number, fields: { name?: string; color?: string | null }): Promise<TagItem>

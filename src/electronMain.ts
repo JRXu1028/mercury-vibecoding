@@ -28,6 +28,7 @@ const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require('ele
 const preloadPath = path.resolve(__dirname, '..', 'electron', 'preload.cjs')
 const rendererDevURL = process.env.MERCURY_RENDERER_URL ?? 'http://127.0.0.1:5173'
 const rendererProdIndex = path.resolve(__dirname, '..', 'frontend', 'dist', 'index.html')
+const appDisplayName = 'Vibe Reader'
 const rawSyncMinutes = Number(process.env.TEAM_A_AUTO_SYNC_MINUTES ?? '10')
 const autoSyncIntervalMinutes = Number.isFinite(rawSyncMinutes) && rawSyncMinutes > 0 ? rawSyncMinutes : 10
 const useDevServer = Boolean(process.env.MERCURY_RENDERER_URL)
@@ -153,13 +154,14 @@ function createMainWindow(): ElectronBrowserWindow {
     minWidth: 1120,
     minHeight: 680,
     show: false,
-    title: 'Mercury Vibecoding',
+    title: appDisplayName,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webSecurity: true
+      webSecurity: true,
+      webviewTag: true
     }
   })
 
@@ -186,31 +188,6 @@ function assertAllowedUrl(rawUrl: string, allowedProtocols: Set<string>): URL {
     throw new Error(`Unsupported link protocol: ${url.protocol}`)
   }
   return url
-}
-
-function openInAppWindow(rawUrl: string): void {
-  const url = assertAllowedUrl(rawUrl, inAppUrlProtocols)
-  const window = new BrowserWindow({
-    width: 1120,
-    height: 820,
-    minWidth: 860,
-    minHeight: 620,
-    title: url.toString(),
-    parent: mainWindow ?? undefined,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      webSecurity: true
-    }
-  })
-
-  window.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
-    void shell.openExternal(targetUrl)
-    return { action: 'deny' }
-  })
-
-  void window.loadURL(url.toString())
 }
 
 function initServices(): void {
@@ -320,8 +297,8 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('link:openInApp', async (_event: IpcMainInvokeEvent, payload: { url: string }) => {
-    openInAppWindow(payload.url)
-    return { ok: true }
+    const url = assertAllowedUrl(payload.url, inAppUrlProtocols)
+    return { ok: true, url: url.toString() }
   })
 
   ipcMain.handle('ai:summarizeEntry', async (_event: IpcMainInvokeEvent, payload: AiSummarizeEntryPayload) => {
@@ -469,7 +446,7 @@ function registerIpcHandlers(): void {
 
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Export OPML',
-      defaultPath: `mercury-feeds-${Date.now()}.opml`,
+      defaultPath: `vibe-reader-feeds-${Date.now()}.opml`,
       filters: [{ name: 'OPML', extensions: ['opml'] }]
     })
 

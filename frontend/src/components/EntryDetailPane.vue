@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { ChatLineRound, MagicStick, Refresh, Setting } from '@element-plus/icons-vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { ChatLineRound, Close, DArrowLeft, DArrowRight, MagicStick, Refresh, RefreshRight, Setting, Upload } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { teamBApi, teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
@@ -21,9 +21,6 @@ const readerTemplate = ref<'classic' | 'editorial' | 'technical'>('classic')
 const activeView = ref<'reader' | 'markdown' | 'summary' | 'translation'>('reader')
 const fontSize = ref(17)
 const lineHeight = ref(1.7)
-const inAppLinkUrl = ref('')
-const inAppDialogVisible = ref(false)
-const inAppFallbackMessage = ref('')
 const isSummarizing = ref(false)
 const isTranslating = ref(false)
 const aiErrorMessage = ref('')
@@ -32,8 +29,54 @@ const translationResult = ref<TranslationResult | null>(null)
 const aiProviderId = ref('mock')
 const providerPanelVisible = ref(false)
 const availableProviders = ref<Array<{ providerId: string; name: string; available: boolean }>>([])
+const embeddedBrowserVisible = ref(false)
+const embeddedBrowserUrl = ref('')
+const embeddedBrowserAddress = ref('')
+const embeddedBrowserTitle = ref('App Browser')
+const embeddedBrowserLoading = ref(false)
+const embeddedBrowserCanGoBack = ref(false)
+const embeddedBrowserCanGoForward = ref(false)
+const embeddedBrowserError = ref('')
+const embeddedBrowserView = ref<EmbeddedWebview | null>(null)
+const embeddedBrowserRect = ref<EmbeddedBrowserRect>({
+  left: 80,
+  top: 64,
+  width: 1120,
+  height: 760
+})
 let loadVersion = 0
 let aiVersion = 0
+
+type EmbeddedBrowserRect = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+type EmbeddedBrowserResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+
+type EmbeddedWebview = HTMLElement & {
+  src: string
+  getURL(): string
+  getTitle(): string
+  canGoBack(): boolean
+  canGoForward(): boolean
+  goBack(): void
+  goForward(): void
+  reload(): void
+}
+
+const minEmbeddedBrowserWidth = 640
+const minEmbeddedBrowserHeight = 360
+const embeddedBrowserMargin = 12
+const embeddedBrowserResizeEdges: EmbeddedBrowserResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']
+let embeddedBrowserResizeState: {
+  edge: EmbeddedBrowserResizeEdge
+  startX: number
+  startY: number
+  startRect: EmbeddedBrowserRect
+} | null = null
 
 function formatTime(value: string | null): string {
   if (!value) {
@@ -46,6 +89,13 @@ function formatTime(value: string | null): string {
 const readerStyle = computed(() => ({
   fontSize: `${fontSize.value}px`,
   lineHeight: String(lineHeight.value)
+}))
+
+const embeddedBrowserWindowStyle = computed(() => ({
+  left: `${embeddedBrowserRect.value.left}px`,
+  top: `${embeddedBrowserRect.value.top}px`,
+  width: `${embeddedBrowserRect.value.width}px`,
+  height: `${embeddedBrowserRect.value.height}px`
 }))
 
 const renderedReaderHtml = computed(() => {
@@ -252,18 +302,12 @@ async function loadContent(forceRefresh = false): Promise<void> {
 }
 
 async function openLinkInApp(url: string): Promise<void> {
-  try {
-    const openedInDesktopWindow = await teamBApi.openInApp(url)
-    if (openedInDesktopWindow) {
-      return
-    }
-  } catch (error) {
-    inAppFallbackMessage.value = error instanceof Error ? error.message : String(error)
+  const normalizedUrl = await teamBApi.openInApp(url)
+  if (!normalizedUrl) {
+    await openLinkInBrowser(url)
+    return
   }
-
-  inAppLinkUrl.value = url
-  inAppFallbackMessage.value = inAppFallbackMessage.value || 'This site may block embedded viewing.'
-  inAppDialogVisible.value = true
+  await openEmbeddedBrowser(normalizedUrl)
 }
 
 async function openLinkInBrowser(url: string): Promise<void> {
@@ -289,6 +333,198 @@ async function chooseOpenLink(url: string): Promise<void> {
 function toAbsoluteUrl(href: string): string {
   const baseUrl = content.value?.url || props.entry?.url || window.location.href
   return new URL(href, baseUrl).toString()
+}
+
+function constrainEmbeddedBrowserRect(rect: EmbeddedBrowserRect): EmbeddedBrowserRect {
+  const maxWidth = Math.max(minEmbeddedBrowserWidth, window.innerWidth - embeddedBrowserMargin * 2)
+  const maxHeight = Math.max(minEmbeddedBrowserHeight, window.innerHeight - embeddedBrowserMargin * 2)
+  const width = Math.min(Math.max(rect.width, minEmbeddedBrowserWidth), maxWidth)
+  const height = Math.min(Math.max(rect.height, minEmbeddedBrowserHeight), maxHeight)
+  const left = Math.min(
+    Math.max(rect.left, embeddedBrowserMargin),
+    Math.max(embeddedBrowserMargin, window.innerWidth - width - embeddedBrowserMargin)
+  )
+  const top = Math.min(
+    Math.max(rect.top, embeddedBrowserMargin),
+    Math.max(embeddedBrowserMargin, window.innerHeight - height - embeddedBrowserMargin)
+  )
+
+  return { left, top, width, height }
+}
+
+function centerEmbeddedBrowserWindow(): void {
+  const width = Math.min(1120, Math.max(minEmbeddedBrowserWidth, window.innerWidth - embeddedBrowserMargin * 2))
+  const height = Math.min(760, Math.max(minEmbeddedBrowserHeight, window.innerHeight - embeddedBrowserMargin * 2))
+  embeddedBrowserRect.value = constrainEmbeddedBrowserRect({
+    left: Math.round((window.innerWidth - width) / 2),
+    top: Math.round((window.innerHeight - height) / 2),
+    width,
+    height
+  })
+}
+
+async function openEmbeddedBrowser(url: string): Promise<void> {
+  if (!embeddedBrowserVisible.value) {
+    centerEmbeddedBrowserWindow()
+  }
+  embeddedBrowserVisible.value = true
+  embeddedBrowserUrl.value = url
+  embeddedBrowserAddress.value = url
+  embeddedBrowserTitle.value = 'App Browser'
+  embeddedBrowserError.value = ''
+  await nextTick()
+  updateEmbeddedBrowserState()
+}
+
+function updateEmbeddedBrowserState(): void {
+  const view = embeddedBrowserView.value
+  if (!view) {
+    embeddedBrowserCanGoBack.value = false
+    embeddedBrowserCanGoForward.value = false
+    return
+  }
+
+  try {
+    embeddedBrowserCanGoBack.value = view.canGoBack()
+    embeddedBrowserCanGoForward.value = view.canGoForward()
+    const currentUrl = view.getURL()
+    if (currentUrl) {
+      embeddedBrowserAddress.value = currentUrl
+    }
+    const title = view.getTitle()
+    embeddedBrowserTitle.value = title || 'App Browser'
+  } catch {
+    embeddedBrowserCanGoBack.value = false
+    embeddedBrowserCanGoForward.value = false
+  }
+}
+
+function navigateEmbeddedBrowser(): void {
+  const target = embeddedBrowserAddress.value.trim()
+  if (!target) {
+    return
+  }
+  embeddedBrowserUrl.value = /^[a-z][a-z0-9+.-]*:/i.test(target) ? target : `https://${target}`
+  embeddedBrowserError.value = ''
+}
+
+function startEmbeddedBrowserResize(edge: EmbeddedBrowserResizeEdge, event: PointerEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+  embeddedBrowserResizeState = {
+    edge,
+    startX: event.clientX,
+    startY: event.clientY,
+    startRect: { ...embeddedBrowserRect.value }
+  }
+  window.addEventListener('pointermove', handleEmbeddedBrowserResize)
+  window.addEventListener('pointerup', stopEmbeddedBrowserResize, { once: true })
+}
+
+function handleEmbeddedBrowserResize(event: PointerEvent): void {
+  if (!embeddedBrowserResizeState) {
+    return
+  }
+
+  const { edge, startX, startY, startRect } = embeddedBrowserResizeState
+  const dx = event.clientX - startX
+  const dy = event.clientY - startY
+  const next = { ...startRect }
+
+  if (edge.includes('e')) {
+    next.width = startRect.width + dx
+  }
+  if (edge.includes('s')) {
+    next.height = startRect.height + dy
+  }
+  if (edge.includes('w')) {
+    const right = startRect.left + startRect.width
+    next.width = startRect.width - dx
+    next.left = right - Math.max(next.width, minEmbeddedBrowserWidth)
+  }
+  if (edge.includes('n')) {
+    const bottom = startRect.top + startRect.height
+    next.height = startRect.height - dy
+    next.top = bottom - Math.max(next.height, minEmbeddedBrowserHeight)
+  }
+
+  embeddedBrowserRect.value = constrainEmbeddedBrowserRect(next)
+}
+
+function stopEmbeddedBrowserResize(): void {
+  embeddedBrowserResizeState = null
+  window.removeEventListener('pointermove', handleEmbeddedBrowserResize)
+}
+
+function goEmbeddedBrowserBack(): void {
+  const view = embeddedBrowserView.value
+  if (view?.canGoBack()) {
+    view.goBack()
+  }
+}
+
+function goEmbeddedBrowserForward(): void {
+  const view = embeddedBrowserView.value
+  if (view?.canGoForward()) {
+    view.goForward()
+  }
+}
+
+function reloadEmbeddedBrowser(): void {
+  embeddedBrowserView.value?.reload()
+}
+
+async function openEmbeddedBrowserExternal(): Promise<void> {
+  const currentUrl = embeddedBrowserView.value?.getURL() || embeddedBrowserUrl.value
+  if (currentUrl) {
+    await openLinkInBrowser(currentUrl)
+  }
+}
+
+function handleEmbeddedBrowserNavigation(): void {
+  embeddedBrowserLoading.value = true
+  embeddedBrowserError.value = ''
+  updateEmbeddedBrowserState()
+}
+
+function handleEmbeddedBrowserLoaded(): void {
+  embeddedBrowserLoading.value = false
+  updateEmbeddedBrowserState()
+}
+
+function handleEmbeddedBrowserFailed(event: Event): void {
+  embeddedBrowserLoading.value = false
+  const details = event as Event & {
+    errorCode?: number
+    errorDescription?: string
+    validatedURL?: string
+  }
+  if (details.errorCode === -3) {
+    updateEmbeddedBrowserState()
+    return
+  }
+  embeddedBrowserError.value = details.errorDescription || 'This page failed to load in the app browser.'
+  updateEmbeddedBrowserState()
+}
+
+function handleEmbeddedBrowserNewWindow(event: Event): void {
+  const nextUrl = (event as Event & { url?: string }).url
+  if (nextUrl) {
+    embeddedBrowserUrl.value = nextUrl
+    embeddedBrowserAddress.value = nextUrl
+    embeddedBrowserError.value = ''
+  }
+}
+
+function closeEmbeddedBrowser(): void {
+  embeddedBrowserVisible.value = false
+  embeddedBrowserUrl.value = ''
+  embeddedBrowserAddress.value = ''
+  embeddedBrowserTitle.value = 'App Browser'
+  embeddedBrowserLoading.value = false
+  embeddedBrowserCanGoBack.value = false
+  embeddedBrowserCanGoForward.value = false
+  embeddedBrowserError.value = ''
 }
 
 function handleReaderClick(event: MouseEvent): void {
@@ -691,24 +927,92 @@ watch(aiProviderId, () => {
     <el-empty v-else description="Select an entry" :image-size="88" />
   </section>
 
-  <el-dialog v-model="inAppDialogVisible" title="In-App Browser" width="80%" top="6vh">
-    <div class="in-app-toolbar">
-      <el-alert
-        v-if="inAppFallbackMessage"
-        :title="inAppFallbackMessage"
-        type="warning"
-        show-icon
-        :closable="false"
+  <div v-if="embeddedBrowserVisible" class="embedded-browser-shell">
+    <div class="embedded-browser-surface" :style="embeddedBrowserWindowStyle">
+      <form class="embedded-browser-toolbar" @submit.prevent="navigateEmbeddedBrowser">
+        <el-button
+          circle
+          :icon="DArrowLeft"
+          native-type="button"
+          :disabled="!embeddedBrowserCanGoBack"
+          title="Back"
+          @click="goEmbeddedBrowserBack"
+        />
+        <el-button
+          circle
+          :icon="DArrowRight"
+          native-type="button"
+          :disabled="!embeddedBrowserCanGoForward"
+          title="Forward"
+          @click="goEmbeddedBrowserForward"
+        />
+        <el-button
+          circle
+          :icon="RefreshRight"
+          native-type="button"
+          :loading="embeddedBrowserLoading"
+          title="Reload"
+          @click="reloadEmbeddedBrowser"
+        />
+        <el-input
+          v-model="embeddedBrowserAddress"
+          class="embedded-browser-address"
+          spellcheck="false"
+        />
+        <el-button
+          circle
+          :icon="Upload"
+          native-type="button"
+          title="Open in Browser"
+          @click="openEmbeddedBrowserExternal"
+        />
+        <el-button
+          circle
+          class="embedded-browser-close"
+          :icon="Close"
+          native-type="button"
+          title="Close"
+          @click="closeEmbeddedBrowser"
+        />
+      </form>
+
+      <div class="embedded-browser-content">
+        <el-alert
+          v-if="embeddedBrowserError"
+          class="embedded-browser-error"
+          type="warning"
+          :title="embeddedBrowserError"
+          show-icon
+          :closable="false"
+        />
+
+        <div class="embedded-browser-frame">
+          <webview
+            v-if="embeddedBrowserUrl"
+            ref="embeddedBrowserView"
+            class="embedded-browser-view"
+            :src="embeddedBrowserUrl"
+            allowpopups
+            @did-start-loading="handleEmbeddedBrowserNavigation"
+            @did-navigate="handleEmbeddedBrowserNavigation"
+            @did-navigate-in-page="handleEmbeddedBrowserNavigation"
+            @did-stop-loading="handleEmbeddedBrowserLoaded"
+            @did-fail-load="handleEmbeddedBrowserFailed"
+            @page-title-updated="handleEmbeddedBrowserLoaded"
+            @new-window="handleEmbeddedBrowserNewWindow"
+          />
+        </div>
+      </div>
+
+      <div
+        v-for="edge in embeddedBrowserResizeEdges"
+        :key="edge"
+        class="embedded-browser-resizer"
+        :class="`is-${edge}`"
+        @pointerdown="startEmbeddedBrowserResize(edge, $event)"
       />
-      <el-button type="primary" plain @click="openLinkInBrowser(inAppLinkUrl)">Open in Browser</el-button>
     </div>
-    <iframe
-      v-if="inAppLinkUrl"
-      class="in-app-browser"
-      :src="inAppLinkUrl"
-      sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
-    />
-  </el-dialog>
+  </div>
 
   <el-dialog
     v-model="providerPanelVisible"
@@ -744,6 +1048,157 @@ watch(aiProviderId, () => {
 .ai-error-area {
   border-top: 1px solid var(--line);
   padding: 10px 16px;
+}
+
+.embedded-browser-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.embedded-browser-surface {
+  position: absolute;
+  min-width: 640px;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+}
+
+.embedded-browser-toolbar {
+  flex: 0 0 auto;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 36px 36px 36px minmax(180px, 1fr) 36px 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.embedded-browser-toolbar :deep(.el-button.is-circle) {
+  width: 34px;
+  height: 34px;
+  margin-left: 0;
+}
+
+.embedded-browser-address {
+  min-width: 0;
+}
+
+.embedded-browser-error {
+  border-radius: 0;
+}
+
+.embedded-browser-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.embedded-browser-close {
+  --el-button-bg-color: #fef2f2;
+  --el-button-border-color: #fecaca;
+  --el-button-hover-bg-color: #fee2e2;
+  --el-button-hover-border-color: #f87171;
+  --el-button-active-bg-color: #fecaca;
+  color: #dc2626;
+}
+
+.embedded-browser-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.embedded-browser-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #ffffff;
+}
+
+.embedded-browser-resizer {
+  position: absolute;
+  z-index: 2;
+}
+
+.embedded-browser-resizer.is-n,
+.embedded-browser-resizer.is-s {
+  left: 12px;
+  right: 12px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.embedded-browser-resizer.is-n {
+  top: 0;
+}
+
+.embedded-browser-resizer.is-s {
+  bottom: 0;
+}
+
+.embedded-browser-resizer.is-e,
+.embedded-browser-resizer.is-w {
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.embedded-browser-resizer.is-e {
+  right: 0;
+}
+
+.embedded-browser-resizer.is-w {
+  left: 0;
+}
+
+.embedded-browser-resizer.is-ne,
+.embedded-browser-resizer.is-nw,
+.embedded-browser-resizer.is-se,
+.embedded-browser-resizer.is-sw {
+  width: 16px;
+  height: 16px;
+}
+
+.embedded-browser-resizer.is-ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.embedded-browser-resizer.is-nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.embedded-browser-resizer.is-se {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+
+.embedded-browser-resizer.is-sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
 }
 
 /* ── Inline summary card (top of Reader / Markdown views) ── */

@@ -137,7 +137,7 @@ export class ContentService {
           'Cache-Control': 'no-cache',
           Pragma: 'no-cache',
           'Upgrade-Insecure-Requests': '1',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) MercuryVibecoding/0.1 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) VibeReader/0.1 Safari/537.36'
         }
       })
       ensureOkResponse(response, entry.url)

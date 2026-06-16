@@ -237,12 +237,12 @@ export const teamBApi = {
     window.open(url, '_blank', 'noopener,noreferrer')
   },
 
-  async openInApp(url: string): Promise<boolean> {
+  async openInApp(url: string): Promise<string | null> {
     if (bridgeB) {
-      await bridgeB.openInApp(url)
-      return true
+      const result = await bridgeB.openInApp(url)
+      return result.url
     }
-    return false
+    return null
   },
 
   async listTags(): Promise<TagWithCount[]> {
