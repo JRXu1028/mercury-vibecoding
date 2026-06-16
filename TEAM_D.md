@@ -178,6 +178,8 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 | `ai:testConnection` | R→M | `{providerId}` | `{ok,error}` | C | `teamCApi` |
 | `ai:saveProviderApiKey` | R→M | `{providerId,apiKey}` | `{ok,error}` | C | `teamCApi` |
 | `ai:getUsageStats` | R→M | - | `UsageStats` | C/D | `teamCApi` |
+| `ai:getLatestResults` | R→M | `{entryId}` | `{summary?,translation?}` | C | `teamCApi`（v0.2.0 新增） |
+| `ai:summaryChunk` | M→R | `{entryId,text,done}` | (流式推送) | C | `teamCApi.onSummaryChunk`（v0.2.0 新增） |
 | `ai:translationSegment` | M→R | `TranslationSegmentEvent` | (事件推送) | C | `teamCApi.onTranslationSegment` |
 | `link:openExternal` | R→M | `{url}` | `{ok}` | B | `teamBApi` |
 | `link:openInApp` | R→M | `{url}` | `{ok}` | B | `teamBApi` |
@@ -216,7 +218,7 @@ Electron 桌面模式下通过 `ipcRenderer.invoke` 通信；纯前端开发模�
 
 ```
 ┌──────────────────────────────────────────┐
-│  Header (Mercury Vibecoding + controls)  │
+│  Header (Vibe Reader + controls)  │
 ├────────┬────────────────┬────────────────┤
 │ Feed   │  Entry List    │  Detail Pane   │
 │ Sidebar│  (搜索+列表)    │  (阅读器+AI)   │
@@ -266,23 +268,26 @@ npm run dist
 
 ### 6.3 已发布版本
 
-| 版本 | 平台 | 下载链接 |
-|------|------|----------|
-| v0.1.0 | macOS arm64 | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
+| 版本 | 平台 | 应用名 | 下载链接 |
+|------|------|--------|----------|
+| v0.1.0 | macOS arm64 | Mercury Vibecoding | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
+| v0.2.0 | macOS arm64 | Vibe Reader | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.0) |
 
 ### 6.4 用户安装说明
 
 **macOS**:
 1. 下载 `.dmg` → 双击打开 → 拖入 Applications
-2. 或下载 `.zip` → 解压 → 双击 `Mercury Vibecoding.app`
+2. 或下载 `.zip` → 解压 → 双击 `Vibe Reader.app`
 3. 首次打开若提示"无法验证开发者"：右键点击应用 → "打开" → 确认
 
 **使用 DeepSeek AI**:
 在终端中设置环境变量后启动应用：
 ```bash
 export DEEPSEEK_API_KEY=your-key
-"/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
+"/Applications/Vibe Reader.app/Contents/MacOS/Vibe Reader" &
 ```
+
+> v0.1.0 → v0.2.0 数据迁移：应用更名导致 userData 目录变更（`mercury-vibecoding/` → `Vibe Reader/`）。如需保留旧数据，手动拷贝 `mercury-vibecoding.db` 至新目录。
 
 ### 6.5 已知打包限制
 

@@ -12,7 +12,9 @@
 - 通过 Electron IPC / preload 暴露当前文章的 AI 摘要与翻译能力
 - 在桌面端文章详情页提供 Mock / DeepSeek Provider 切换，并展示结果
 
-第一版重点是跑通框架、接口边界和真实 Provider 端到端链路。它不把 AI 结果写入 SQLite，不提供 API Key 输入框，也不做复杂 Provider 管理、模型管理、流式输出、历史记录或结果持久化。
+第一版重点是跑通框架、接口边界和真实 Provider 端到端链路。
+
+**v0.1.0 → v0.2.0 进展**：v0.1.0 之后已实现 API Key 输入框（`ProviderPanel.vue` + Electron safeStorage）、Provider 管理、LLM 用量统计、ECNU 大模型接入；v0.2.0 起实现流式摘要（`openAIStream.ts` + SSE）与 AI 结果持久化（`aiResultService.ts`）。具体未实现项见下方「当前未实现」。
 
 ## 当前架构
 
@@ -290,12 +292,12 @@ npm run dev:ai:openai-compatible
 
 ## 当前未实现
 
-第一版暂未包含：
+第一版暂未包含（**粗体** 为 v0.2.0 已实现）：
 
 - 本地模型 Provider
-- 持久化 API Key 存储或密钥管理 UI
-- SQLite schema 或结果持久化
-- 流式输出
+- **持久化 API Key 存储或密钥管理 UI**（v0.1.0 起通过 Electron safeStorage + ProviderPanel 实现）
+- **SQLite schema 或结果持久化**（v0.2.0 起通过 `aiResultService.ts` 实现）
+- **流式输出**（v0.2.0 起通过 `openAIStream.ts` + SSE 推送实现）
 - 重试策略
 - 翻译缓存
 - 更复杂的 Markdown parser
@@ -530,7 +532,7 @@ P0 和 P1 翻译进度问题已修复。
 | 7 | **核心模块零测试** | `tests/` | Team A/B/D 都有测试覆盖，Team C 的 Agent、Provider、Registry 均无测试 |
 | 8 | **Provider Registry 纯内存** | `providerRegistry.ts` | `Map<string, LLMProvider>` 只在内存中；若后续支持用户自定义 Provider，重启后需重新注册 |
 | 9 | **dev:server HTTP 模式下 AI 不可用** | `client.ts` | summarize/translate 在非 Electron 环境直接 `throw new Error`，纯前端开发时无法调试 AI 功能 |
-| 10 | **流式输出缺失** | `LLMProvider` 接口 | `chat()` 不支持 streaming；DeepSeek / OpenAI API 都支持 `stream: true`，但 Provider 接口未定义流式方法 |
+| 10 | ~~流式输出缺失~~ **已解决（v0.2.0）** | `LLMProvider` 接口 | `openAIStream.ts` 实现 SSE 流式输出；`summaryAgent.ts` 支持 streaming；`aiResultService.ts` 持久化结果 |
 
 ### 技术债务
 

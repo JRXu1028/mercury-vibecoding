@@ -8,6 +8,8 @@
 
 项目定位：一个本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签功能的 RSS 阅读器。
 
+> 应用名 **Vibe Reader**（v0.2.0 起，原 Mercury Vibecoding）。仓库保留原项目代号。
+
 ## 下载安装
 
 👉 [GitHub Release 页面](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
@@ -49,7 +51,7 @@
 ## 架构分层
 
 ```text
-Mercury 桌面应用
+Vibe Reader 桌面应用
 ├── Renderer 前端：Vue 3 + TypeScript + Vite
 ├── IPC 安全桥接：contextBridge
 ├── Main Process 后端：Node.js + TypeScript
@@ -215,7 +217,7 @@ npm run start:desktop
 - **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
 - **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（Markdown 渲染、多套阅读样式模板、链接应用内/浏览器打开）
 - **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / ECNU 三种 Provider、API Key 加密存储与连通性测试、Provider 管理面板、实时翻译推送、LLM 用量统计、侧栏折叠
-- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、32 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、34 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
 
 ---
 

@@ -1,4 +1,4 @@
-# Mercury Vibecoding 安装与使用指南
+# Vibe Reader 安装与使用指南
 
 ## 1. 下载
 
@@ -6,10 +6,12 @@
 
 | 平台 | 下载文件 | 架构 |
 |------|----------|------|
-| macOS | `Mercury Vibecoding-0.1.0-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
-| Windows | `Mercury Vibecoding-0.1.0-setup.exe` | x64 |
+| macOS | `Vibe Reader-0.1.0-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
+| Windows | `Vibe Reader-0.1.0-setup.exe` | x64 |
 
 > Intel Mac 用户：当前仅提供 arm64 版本。如需 Intel 版本，请在 Intel Mac 上 `git clone` 后执行 `npm install && npm run dist`。
+>
+> 旧版本 v0.1.0（应用名 Mercury Vibecoding）数据存放在 `~/Library/Application Support/mercury-vibecoding/`，与 v0.2.0 起的 Vibe Reader（`~/Library/Application Support/Vibe Reader/`）路径不同，需手动迁移或重新配置订阅源。
 
 ---
 
@@ -20,18 +22,18 @@
 **方式一：DMG 安装（推荐）**
 
 1. 双击下载的 `.dmg` 文件
-2. 在弹出的窗口中，将 `Mercury Vibecoding` 拖入右侧 `Applications` 文件夹
+2. 在弹出的窗口中，将 `Vibe Reader` 拖入右侧 `Applications` 文件夹
 3. 从启动台或 `Applications` 文件夹中打开应用
 
 **方式二：ZIP 解压**
 
 1. 双击 `.zip` 文件解压
-2. 将解压出的 `Mercury Vibecoding.app` 拖入 `Applications` 文件夹
+2. 将解压出的 `Vibe Reader.app` 拖入 `Applications` 文件夹
 3. 双击打开
 
 **首次打开安全提示**
 
-macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding，因为无法验证开发者"。这是正常现象，解决方法：
+macOS 可能提示 "无法验证开发者" 或 "无法打开 Vibe Reader，因为无法验证开发者"。这是正常现象，解决方法：
 
 - **方法一**：右键点击应用 → 选择 "打开" → 在弹窗中点击 "打开"
 - **方法二**：前往 **系统设置 → 隐私与安全性** → 在底部找到被拦截的应用 → 点击 "仍要打开"
@@ -61,6 +63,7 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 - **左侧栏**：显示所有订阅源，点击切换
 - **中间栏**：显示当前订阅源的文章列表，可搜索
 - **右侧栏**：显示选中的文章正文，自动清洗为可读格式
+- 内嵌浏览器：点击文章中的外部链接会在应用内打开可缩放浏览窗口，支持前进/后退/刷新
 
 ### 3.3 同步
 
@@ -98,11 +101,11 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 2. 在终端中设置环境变量并启动应用：
    ```bash
    export DEEPSEEK_API_KEY=sk-your-deepseek-key
-   "/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
+   "/Applications/Vibe Reader.app/Contents/MacOS/Vibe Reader" &
    ```
    > 注意：不能使用 `open -a`，因为 macOS GUI 应用不会继承终端环境变量。必须直接启动应用二进制文件。
 3. 在应用中将 AI Provider 切换为 **DeepSeek**
-4. 点击 **AI Summary** 获取摘要，或 **AI Translation** 获取中文翻译
+4. 点击 **AI Summary** 获取摘要（流式输出，逐字推送），或 **AI Translation** 获取中文翻译
 
 ### 4.3 OpenAI-Compatible 模式
 
@@ -121,7 +124,7 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
    export OPENAI_COMPATIBLE_API_KEY=sk-your-key
    export OPENAI_COMPATIBLE_BASE_URL=https://your-api-endpoint/v1   # 可选
    export OPENAI_COMPATIBLE_MODEL=gpt-4o-mini                       # 可选
-   "/Applications/Mercury Vibecoding.app/Contents/MacOS/Mercury Vibecoding" &
+   "/Applications/Vibe Reader.app/Contents/MacOS/Vibe Reader" &
    ```
 3. 将 AI Provider 切换为 **openai-compatible**
 
@@ -134,14 +137,18 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 | 字号调节 | 调整正文字体大小 (12-18px) |
 | 行高调节 | 调整正文行间距 (1.4-2.2) |
 
+### 4.5 流式摘要
+
+v0.2.0 起支持流式摘要：点击 **AI Summary** 后，摘要内容会以 SSE 方式逐字推送至右侧面板，无需等待完整响应。最近一次 AI 结果会持久化保存，切换文章后仍可回看。
+
 ---
 
 ## 5. 数据存储位置
 
 | 平台 | 数据库 | 日志 |
 |------|--------|------|
-| macOS | `~/Library/Application Support/mercury-vibecoding/mercury-vibecoding.db` | `~/Library/Application Support/mercury-vibecoding/logs/mercury.log` |
-| Windows | `%APPDATA%/mercury-vibecoding/mercury-vibecoding.db` | `%APPDATA%/mercury-vibecoding/logs/mercury.log` |
+| macOS | `~/Library/Application Support/Vibe Reader/mercury-vibecoding.db` | `~/Library/Application Support/Vibe Reader/logs/mercury.log` |
+| Windows | `%APPDATA%/Vibe Reader/mercury-vibecoding.db` | `%APPDATA%/Vibe Reader/logs/mercury.log` |
 
 数据独立于应用程序，升级应用不会丢失订阅和文章数据。
 
@@ -155,6 +162,7 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Mercury Vibecoding�
 | Windows SmartScreen 拦截 | 同上，点击 "仍要运行" 即可 |
 | AI 功能仅桌面可用 | HTTP 开发模式下不支持 AI 摘要/翻译 |
 | Intel Mac 无预编译包 | 需自行从源码编译打包 |
+| v0.1.0 → v0.2.0 数据迁移 | 应用更名导致 userData 目录变更，需手动迁移数据库文件 |
 
 ---
 
