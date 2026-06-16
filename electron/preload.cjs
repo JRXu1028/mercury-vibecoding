@@ -35,9 +35,20 @@ contextBridge.exposeInMainWorld('teamAApi', {
 })
 
 const translationSegmentListeners = new Set()
+const summaryChunkListeners = new Set()
 
 ipcRenderer.on('ai:translationSegment', (_event, data) => {
   for (const listener of translationSegmentListeners) {
+    try {
+      listener(data)
+    } catch {
+      // Ignore listener errors.
+    }
+  }
+})
+
+ipcRenderer.on('ai:summaryChunk', (_event, data) => {
+  for (const listener of summaryChunkListeners) {
     try {
       listener(data)
     } catch {
@@ -54,10 +65,17 @@ contextBridge.exposeInMainWorld('teamCApi', {
   testConnection: (providerId) => ipcRenderer.invoke('ai:testConnection', { providerId }),
   saveProviderApiKey: (providerId, apiKey) => ipcRenderer.invoke('ai:saveProviderApiKey', { providerId, apiKey }),
   getUsageStats: () => ipcRenderer.invoke('ai:getUsageStats'),
+  getLatestAiResults: (entryId) => ipcRenderer.invoke('ai:getLatestResults', { entryId }),
   onTranslationSegment: (callback) => {
     translationSegmentListeners.add(callback)
     return () => {
       translationSegmentListeners.delete(callback)
+    }
+  },
+  onSummaryChunk: (callback) => {
+    summaryChunkListeners.add(callback)
+    return () => {
+      summaryChunkListeners.delete(callback)
     }
   }
 })

@@ -1,4 +1,5 @@
 import type { LLMChatOptions, LLMMessage, LLMProvider, LLMUsage } from '../types.js'
+import { readOpenAICompatibleStream } from './openAIStream.js'
 
 export const OPENAI_COMPATIBLE_PROVIDER_ID = 'openai-compatible'
 export const DEFAULT_OPENAI_COMPATIBLE_BASE_URL = 'https://api.openai.com/v1'
@@ -145,6 +146,10 @@ export function createOpenAICompatibleProvider(
   return {
     id: providerId,
     name: providerName,
+    capabilities: {
+      chat: true,
+      streamChat: true,
+    },
 
     async testConnection() {
       await postChat([{ role: 'user', content: 'ping' }], {
@@ -160,6 +165,33 @@ export function createOpenAICompatibleProvider(
 
     async chat(messages, chatOptions) {
       return postChat(messages, chatOptions)
+    },
+
+    async streamChat(messages, chatOptions, onChunk) {
+      const model = chatOptions?.model ?? defaultModel
+      const response = await fetch(chatCompletionsUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resolveApiKey(options.apiKey)}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: chatOptions?.temperature,
+          max_tokens: chatOptions?.maxTokens,
+          stream: true,
+          stream_options: { include_usage: true },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(
+          `${providerName} stream chat completion failed: ${await readErrorMessage(response)}`,
+        )
+      }
+
+      return readOpenAICompatibleStream(response, model, providerId, onChunk)
     },
   }
 }

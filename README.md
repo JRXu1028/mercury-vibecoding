@@ -40,7 +40,7 @@
 | OPML | fast-xml-parser | 导入导出订阅源 |
 | 正文提取 | @mozilla/readability + jsdom | 从网页 HTML 提取正文 |
 | 内容清洗 | DOMPurify + turndown | 清洗 HTML 并转换为 Markdown |
-| Markdown 展示 | 纯文本预览 | 在阅读器中展示 Markdown 原文 |
+| Markdown 渲染 | marked + highlight.js | 在阅读器中渲染 Markdown 为富文本 |
 | LLM 调用 | 原生 fetch (OpenAI-compatible) | 调用 OpenAI-compatible API |
 | 打包 | electron-builder | 生成 Windows / macOS / Linux 安装包 |
 
@@ -213,9 +213,9 @@ npm run start:desktop
 ### 各组已接入功能
 
 - **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
-- **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（主题/字号/行距）
+- **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（Markdown 渲染、多套阅读样式模板、链接应用内/浏览器打开）
 - **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / ECNU 三种 Provider、API Key 加密存储与连通性测试、Provider 管理面板、实时翻译推送、LLM 用量统计、侧栏折叠
-- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、30 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、32 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
 
 ---
 
@@ -235,3 +235,4 @@ npm run start:desktop
 | 2026-06-05 | Team C | 完成 API Key 加密存储（Electron safeStorage）、Provider 连通性测试、Provider 管理面板 UI（ProviderPanel）。新增 3 个 IPC 通道（ai:listProviders、ai:testConnection、ai:saveProviderApiKey）、llm_providers 表新增 api_key_encrypted 列。 |
 | 2026-06-08 | Team D | 完成 Notes/Tags 前端 UI（EntryTags 组件、EntryNotes 组件），集成到 EntryDetailPane。演示测试数据文档（TEST_DATA.md）。 |
 | 2026-06-09 | Team C | 完成第三阶段：侧栏折叠、实时翻译推送（ai:translationSegment M→R 事件）、LLM 用量统计（ai:getUsageStats）、ECNU 大模型接入、翻译/摘要视图。 |
+| 2026-06-09 | Team B | 修正了 Reader 改为从 Markdown 渲染展示，新增并区分多套阅读样式模板，优化链接的应用内/浏览器打开方式。 |

@@ -171,3 +171,47 @@ export async function summarizeArticle(
     usage: response.usage,
   }
 }
+
+export async function summarizeArticleStream(
+  article: ArticleInput,
+  options: SummaryOptions = {},
+  onChunk: (chunk: string, accumulated: string) => void,
+): Promise<SummaryResult> {
+  const language = options.language ?? DEFAULT_SUMMARY_LANGUAGE
+  const length = options.length ?? DEFAULT_SUMMARY_LENGTH
+  const lengthSpec = resolveSummaryLengthSpec(length)
+  const provider = getProvider(options.providerId)
+  const messages = buildSummaryMessages(article, { ...options, language, length })
+  let accumulated = ''
+
+  const response = await provider.streamChat(
+    messages,
+    {
+      model: options.model,
+      temperature: 0.2,
+      maxTokens: lengthSpec.maxTokens,
+    },
+    (chunk) => {
+      accumulated += chunk.content
+      onChunk(chunk.content, accumulated)
+    },
+  )
+  const summary = response.content.trim()
+
+  if (!summary) {
+    throw new Error(
+      `AI provider "${response.providerId}" returned an empty summary for article "${article.id}".`,
+    )
+  }
+
+  return {
+    articleId: article.id,
+    summary,
+    language,
+    length,
+    providerId: response.providerId,
+    model: response.model,
+    createdAt: response.createdAt,
+    usage: response.usage,
+  }
+}

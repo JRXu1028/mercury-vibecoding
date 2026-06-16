@@ -94,6 +94,18 @@ export interface TranslationResult {
   usage: LLMUsage
 }
 
+export interface SummaryChunkEvent {
+  entryId: number
+  chunk: string
+  accumulated: string
+  done: boolean
+}
+
+export interface LatestAiResults {
+  summary: SummaryResult | null
+  translation: TranslationResult | null
+}
+
 export interface AddFeedResponse {
   feed: FeedItem
   newEntryCount: number
@@ -124,6 +136,7 @@ export interface ProviderInfo {
   apiKeyEnvVar: string | null
   available: boolean
   hasStoredKey: boolean
+  capabilities?: { chat: true; streamChat: true }
 }
 
 export interface TeamCBridgeApi {
@@ -134,7 +147,9 @@ export interface TeamCBridgeApi {
   testConnection(providerId: string): Promise<{ ok: boolean; error: string | null }>
   saveProviderApiKey(providerId: string, apiKey: string): Promise<{ ok: boolean; error: string | null }>
   getUsageStats(): Promise<UsageStats>
+  getLatestAiResults(entryId: number): Promise<LatestAiResults>
   onTranslationSegment(callback: (data: TranslationSegmentEvent) => void): () => void
+  onSummaryChunk(callback: (data: SummaryChunkEvent) => void): () => void
 }
 
 export interface TranslationSegmentEvent {

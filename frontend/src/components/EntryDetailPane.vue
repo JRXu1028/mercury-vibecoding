@@ -5,6 +5,9 @@ import { ElMessageBox } from 'element-plus'
 import { teamBApi, teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
 import { renderMarkdownToHtml } from '../utils/readerMarkdown'
+import { resolveAiAction } from '../utils/aiAction'
+import { resetAiView, type ReaderViewMode } from '../utils/readerView'
+import { waitForVisibleReset } from '../utils/uiPaint'
 import ProviderPanel from './ProviderPanel.vue'
 import EntryTags from './EntryTags.vue'
 import EntryNotes from './EntryNotes.vue'
@@ -18,7 +21,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const readerTheme = ref<'light' | 'sepia' | 'dark'>('light')
 const readerTemplate = ref<'classic' | 'editorial' | 'technical'>('classic')
-const activeView = ref<'reader' | 'markdown' | 'summary' | 'translation'>('reader')
+const activeView = ref<ReaderViewMode>('reader')
 const fontSize = ref(17)
 const lineHeight = ref(1.7)
 const isSummarizing = ref(false)
@@ -563,6 +566,46 @@ async function loadProviders(): Promise<void> {
   }
 }
 
+async function loadLatestAiResults(): Promise<void> {
+  if (!props.entry) {
+    summaryResult.value = null
+    translationResult.value = null
+    return
+  }
+
+  const entryId = props.entry.id
+  try {
+    const result = await teamCApi.getLatestAiResults(entryId)
+    if (props.entry?.id === entryId) {
+      summaryResult.value = result.summary
+      translationResult.value = result.translation
+    }
+  } catch {
+    if (props.entry?.id === entryId) {
+      summaryResult.value = null
+      translationResult.value = null
+    }
+  }
+}
+
+function handleSummaryClick(): void {
+  const action = resolveAiAction(Boolean(summaryResult.value), 'summary')
+  if (action === 'show-summary') {
+    activeView.value = 'summary'
+    return
+  }
+  void summarizeEntry()
+}
+
+function handleTranslationClick(): void {
+  const action = resolveAiAction(Boolean(translationResult.value), 'translation')
+  if (action === 'show-translation') {
+    activeView.value = 'translation'
+    return
+  }
+  void translateEntry()
+}
+
 async function summarizeEntry(): Promise<void> {
   if (!props.entry) {
     return
@@ -573,10 +616,37 @@ async function summarizeEntry(): Promise<void> {
   }
 
   const version = ++aiVersion
+  const entryId = props.entry.id
   isSummarizing.value = true
   aiErrorMessage.value = ''
+  summaryResult.value = {
+    articleId: String(entryId),
+    summary: '',
+    language: 'zh-CN',
+    length: 'medium',
+    providerId: aiProviderId.value,
+    model: '',
+    createdAt: new Date().toISOString(),
+    usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+  }
+  activeView.value = 'summary'
+
+  await nextTick()
+  await waitForVisibleReset()
+
+  if (removeSummaryListener) removeSummaryListener()
+  removeSummaryListener = teamCApi.onSummaryChunk((data) => {
+    if (version !== aiVersion) return
+    if (data.entryId !== entryId) return
+    if (!summaryResult.value) return
+    summaryResult.value = {
+      ...summaryResult.value,
+      summary: data.accumulated
+    }
+  })
+
   try {
-    const result = await teamCApi.summarizeEntry(props.entry.id, {
+    const result = await teamCApi.summarizeEntry(entryId, {
       providerId: aiProviderId.value,
       length: 'medium'
     })
@@ -585,17 +655,23 @@ async function summarizeEntry(): Promise<void> {
     }
   } catch (error) {
     if (version === aiVersion) {
+      summaryResult.value = null
       aiErrorMessage.value = error instanceof Error ? error.message : String(error)
     }
   } finally {
     if (version === aiVersion) {
       isSummarizing.value = false
     }
+    if (removeSummaryListener) {
+      removeSummaryListener()
+      removeSummaryListener = null
+    }
   }
 }
 
 const translationProgress = ref({ done: 0, total: 0 })
 let removeSegmentListener: (() => void) | null = null
+let removeSummaryListener: (() => void) | null = null
 
 async function translateEntry(): Promise<void> {
   if (!props.entry) {
@@ -609,7 +685,20 @@ async function translateEntry(): Promise<void> {
   const version = ++aiVersion
   isTranslating.value = true
   aiErrorMessage.value = ''
+  translationResult.value = {
+    articleId: String(props.entry.id),
+    targetLanguage: 'zh-CN',
+    bilingual: false,
+    segments: [],
+    providerId: aiProviderId.value,
+    model: '',
+    createdAt: new Date().toISOString(),
+    usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+  }
+  activeView.value = 'translation'
   translationProgress.value = { done: 0, total: 0 }
+  await nextTick()
+  await waitForVisibleReset()
 
   // Register listener for real-time segments
   if (removeSegmentListener) removeSegmentListener()
@@ -657,12 +746,7 @@ async function translateEntry(): Promise<void> {
     })
     if (version === aiVersion) {
       // Replace with final result (has correct provider/model/usage)
-      translationResult.value = {
-        ...result,
-        segments: translationResult.value?.segments.length === result.segments.length
-          ? translationResult.value.segments  // keep progressively-built segments if same count
-          : result.segments
-      }
+      translationResult.value = result
     }
   } catch (error) {
     if (version === aiVersion) {
@@ -687,10 +771,15 @@ function resetAiResults(): void {
   aiErrorMessage.value = ''
   summaryResult.value = null
   translationResult.value = null
+  activeView.value = resetAiView(activeView.value)
   translationProgress.value = { done: 0, total: 0 }
   if (removeSegmentListener) {
     removeSegmentListener()
     removeSegmentListener = null
+  }
+  if (removeSummaryListener) {
+    removeSummaryListener()
+    removeSummaryListener = null
   }
 }
 
@@ -700,6 +789,7 @@ watch(
     resetAiResults()
     void loadContent(false)
     void loadProviders()
+    void loadLatestAiResults()
   },
   { immediate: true }
 )
@@ -769,7 +859,7 @@ watch(aiProviderId, () => {
           :icon="MagicStick"
           :loading="isSummarizing"
           :disabled="isTranslating || isAiActionDisabled"
-          @click="summarizeEntry"
+          @click="handleSummaryClick"
         >
           AI Summary
         </el-button>
@@ -779,7 +869,7 @@ watch(aiProviderId, () => {
           :icon="ChatLineRound"
           :loading="isTranslating"
           :disabled="isSummarizing || isAiActionDisabled"
-          @click="translateEntry"
+          @click="handleTranslationClick"
         >
           AI Translation
         </el-button>
@@ -841,6 +931,13 @@ watch(aiProviderId, () => {
             <div class="summary-dedicated-header">
               <h2>AI Summary</h2>
               <span>{{ summaryResult.providerId }} / {{ summaryResult.model }}</span>
+              <el-button
+                size="small"
+                plain
+                :loading="isSummarizing"
+                :disabled="isTranslating || isAiActionDisabled"
+                @click="summarizeEntry"
+              >重新生成</el-button>
             </div>
             <div class="summary-dedicated-body">
               <p>{{ summaryResult.summary }}</p>
@@ -869,6 +966,13 @@ watch(aiProviderId, () => {
                   {{ translationResult.providerId }} / {{ translationResult.model }} · {{ translationResult.targetLanguage }}
                 </template>
               </span>
+              <el-button
+                size="small"
+                plain
+                :loading="isTranslating"
+                :disabled="isSummarizing || isAiActionDisabled"
+                @click="translateEntry"
+              >重新生成</el-button>
             </div>
 
             <div
