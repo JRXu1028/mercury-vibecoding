@@ -1,5 +1,5 @@
 {
-  "name": "mercury-vibecoding",
+  "name": "vibe-reader",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -49,8 +49,8 @@
     "wait-on": "^8.0.3"
   },
   "build": {
-    "appId": "com.mercury-vibecoding",
-    "productName": "Mercury Vibecoding",
+    "appId": "com.vibe-reader",
+    "productName": "Vibe Reader",
     "directories": {
       "output": "release"
     },

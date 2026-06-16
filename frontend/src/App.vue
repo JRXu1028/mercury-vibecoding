@@ -135,7 +135,7 @@ async function exportOpml(): Promise<void> {
     const blob = new Blob([opml], { type: 'text/x-opml;charset=utf-8' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `mercury-feeds-${Date.now()}.opml`
+    link.download = `vibe-reader-feeds-${Date.now()}.opml`
     link.click()
     URL.revokeObjectURL(link.href)
   } catch (error) {
@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="page-shell">
     <header class="topbar">
-      <h1>Mercury Vibecoding</h1>
+      <h1>Vibe Reader</h1>
       <p>Team A Feed Console</p>
       <div class="topbar-controls">
         <el-switch

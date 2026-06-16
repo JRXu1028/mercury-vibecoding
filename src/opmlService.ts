@@ -95,7 +95,7 @@ export class OPMLService {
       opml: {
         '@_version': '2.0',
         head: {
-          title: 'Mercury Vibecoding Feeds'
+          title: 'Vibe Reader Feeds'
         },
         body: {
           outline: outlines

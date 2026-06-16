@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   const opmlService = new OPMLService(feedService)
   const rl = createInterface({ input, output })
 
-  output.write('Mercury Vibecoding Team A CLI\n')
+  output.write('Vibe Reader Team A CLI\n')
   output.write('Commands: add <url>, list-feeds, list-entries [feedId], sync <feedId>, sync-all, remove <feedId>, import-opml <file>, export-opml <file>, exit\n')
 
   try {
