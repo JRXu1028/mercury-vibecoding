@@ -1,6 +1,6 @@
 {
   "name": "vibe-reader",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "type": "module",
   "engines": {
@@ -21,6 +21,7 @@
     "dist": "npm run build:desktop && electron-builder",
     "dist:win": "npm run build:desktop && electron-builder --win",
     "dist:mac": "npm run build:desktop && electron-builder --mac",
+    "dist:linux": "npm run build:desktop && electron-builder --linux",
     "test": "vitest run"
   },
   "dependencies": {
