@@ -1,6 +1,6 @@
 {
   "name": "vibe-reader",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -51,6 +51,7 @@
   "build": {
     "appId": "com.vibe-reader",
     "productName": "Vibe Reader",
+    "publish": null,
     "directories": {
       "output": "release",
       "buildResources": "build"
