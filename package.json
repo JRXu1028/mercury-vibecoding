@@ -1,7 +1,12 @@
 {
   "name": "vibe-reader",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
+  "author": {
+    "name": "Team D - Mercury Vibecoding Project",
+    "email": "team-d@mercury-vibecoding.local"
+  },
+  "description": "本地优先、跨平台、支持 AI 摘要/翻译/标签的 RSS 阅读器",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
