@@ -7,6 +7,8 @@ const props = defineProps<{
   selectedFeedId: number | null
   loading: boolean
   collapsed: boolean
+  autoSyncEnabled: boolean
+  autoSyncIntervalMinutes: number
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +19,8 @@ const emit = defineEmits<{
   exportOpml: []
   remove: [feed: FeedItem]
   toggleCollapse: []
+  updateAutoSyncEnabled: [value: boolean]
+  updateAutoSyncInterval: [value: number]
 }>()
 </script>
 
@@ -43,6 +47,25 @@ const emit = defineEmits<{
         <el-button text :icon="Upload" @click="emit('importOpml')">Import OPML</el-button>
         <el-button text :icon="Download" @click="emit('exportOpml')">Export OPML</el-button>
         <el-button text @click="emit('select', null)">All Feeds</el-button>
+      </div>
+
+      <div class="auto-sync-settings">
+        <el-switch
+          :model-value="props.autoSyncEnabled"
+          active-text="Auto Sync"
+          @update:model-value="emit('updateAutoSyncEnabled', $event)"
+        />
+        <el-select
+          :model-value="props.autoSyncIntervalMinutes"
+          :disabled="!props.autoSyncEnabled"
+          aria-label="Auto sync interval"
+          @update:model-value="emit('updateAutoSyncInterval', $event)"
+        >
+          <el-option :value="5" label="5 min" />
+          <el-option :value="10" label="10 min" />
+          <el-option :value="15" label="15 min" />
+          <el-option :value="30" label="30 min" />
+        </el-select>
       </div>
 
       <el-scrollbar class="feed-list">
@@ -85,6 +108,9 @@ const emit = defineEmits<{
   padding: 14px 0;
   cursor: pointer;
   height: 100%;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   transition: color 0.15s;
 }
@@ -95,10 +121,22 @@ const emit = defineEmits<{
 }
 
 .collapsed-label {
-  writing-mode: vertical-rl;
+  margin-top: 18px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 2px;
+  white-space: nowrap;
+  transform: rotate(90deg);
+  transform-origin: center;
   user-select: none;
+}
+
+.auto-sync-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
 }
 </style>
