@@ -94,6 +94,9 @@ function formatTime(value: string | null): string {
   padding: 14px 0;
   cursor: pointer;
   height: 100%;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   transition: color 0.15s;
 }
@@ -104,10 +107,13 @@ function formatTime(value: string | null): string {
 }
 
 .collapsed-label {
-  writing-mode: vertical-rl;
+  margin-top: 22px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 2px;
+  white-space: nowrap;
+  transform: rotate(90deg);
+  transform-origin: center;
   user-select: none;
 }
 </style>

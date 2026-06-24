@@ -167,6 +167,16 @@ function resetAutoSyncTimer(): void {
   }, autoSyncIntervalMinutes.value * 60 * 1000)
 }
 
+function updateAutoSyncEnabled(value: boolean): void {
+  autoSyncEnabled.value = value
+  resetAutoSyncTimer()
+}
+
+function updateAutoSyncInterval(value: number): void {
+  autoSyncIntervalMinutes.value = value
+  resetAutoSyncTimer()
+}
+
 let removeLogListener: (() => void) | null = null
 
 onMounted(() => {
@@ -198,35 +208,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="page-shell">
-    <header class="topbar">
-      <h1>Vibe Reader</h1>
-      <p>Team A Feed Console</p>
-      <div class="topbar-controls">
-        <el-switch
-          v-model="autoSyncEnabled"
-          active-text="Auto Sync"
-          @change="resetAutoSyncTimer"
-        />
-        <el-select
-          v-model="autoSyncIntervalMinutes"
-          style="width: 110px"
-          :disabled="!autoSyncEnabled"
-          @change="resetAutoSyncTimer"
-        >
-          <el-option :value="5" label="5 min" />
-          <el-option :value="10" label="10 min" />
-          <el-option :value="15" label="15 min" />
-          <el-option :value="30" label="30 min" />
-        </el-select>
-      </div>
-    </header>
-
     <main class="main-layout" :style="{ gridTemplateColumns: gridColumns }">
       <FeedSidebar
         :feeds="store.feeds"
         :selected-feed-id="store.selectedFeedId"
         :loading="store.isLoadingFeeds"
         :collapsed="sidebarCollapsed"
+        :auto-sync-enabled="autoSyncEnabled"
+        :auto-sync-interval-minutes="autoSyncIntervalMinutes"
         @select="(id) => { store.selectedFeedId = id; store.refreshEntries() }"
         @add="addFeedDialogVisible = true"
         @sync-all="syncCurrent"
@@ -234,6 +223,8 @@ onBeforeUnmount(() => {
         @export-opml="exportOpml"
         @remove="(feed) => removeFeed(feed.id, feed.title)"
         @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+        @update-auto-sync-enabled="updateAutoSyncEnabled"
+        @update-auto-sync-interval="updateAutoSyncInterval"
       />
 
       <EntryListPane
