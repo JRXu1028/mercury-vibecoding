@@ -8,7 +8,7 @@
 
 项目定位：一个本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签功能的 RSS 阅读器。
 
-> 应用名 **Vibe Reader**（v0.2.0 起，原 Mercury Vibecoding）。仓库保留原项目代号。
+> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.5**）。仓库保留原项目代号。
 
 ## 下载安装
 
@@ -242,3 +242,8 @@ npm run start:desktop
 | 2026-06-13 | Team C | 完成流式摘要生成（SSE 推送）与 AI 结果持久化展示；LLM Provider 流式输出适配。 |
 | 2026-06-16 | Team D | 拉取最新 main（8 commit），44/44 测试通过，打包 macOS arm64 dmg/zip，发布 v0.2.0 Release。 |
 | 2026-06-16 | Team D | 配置自定义应用图标（`build/icon.png`），版本升至 v0.2.1，重新打包发布。 |
+| 2026-06-17 | Team D | 完成 CI/CD 跨平台工作流：GitHub Actions 三平台并行构建（macOS / Windows / Linux），打 tag 触发自动发 release；配置 `publish: null` 禁用 electron-builder 自动发布；新增 `dist:linux` 脚本与 `author/description` 字段。 |
+| 2026-06-24 | Team A | 完成 v0.2.5：侧栏折叠面板的文本/图标自适应（折叠态不溢出）；删除冗余 Header 栏回收垂直空间。 |
+| 2026-06-24 | Team C | 完成 v0.2.5：流式摘要（SSE 推送，`openAIStream.ts` + `ai:summaryChunk` IPC），不阻塞其他操作；AI 结果持久化（`aiResultService.ts` + `ai:getLatestResults` IPC），切文章/重启不丢失。 |
+| 2026-06-24 | Team B | 完成 v0.2.5：内嵌浏览器支持前进/后退/刷新（webContents 导航栈），不再弹外部应用。 |
+| 2026-06-24 | Team D | 合并上述改动，bump 至 v0.2.5，CI 自动三平台构建 + 发布 Release。 |
