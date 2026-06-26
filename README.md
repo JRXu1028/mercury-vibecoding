@@ -247,3 +247,4 @@ npm run start:desktop
 | 2026-06-24 | Team C | 完成 v0.2.5：流式摘要（SSE 推送，`openAIStream.ts` + `ai:summaryChunk` IPC），不阻塞其他操作；AI 结果持久化（`aiResultService.ts` + `ai:getLatestResults` IPC），切文章/重启不丢失。 |
 | 2026-06-24 | Team B | 完成 v0.2.5：内嵌浏览器支持前进/后退/刷新（webContents 导航栈），不再弹外部应用。 |
 | 2026-06-24 | Team D | 合并上述改动，bump 至 v0.2.5，CI 自动三平台构建 + 发布 Release。 |
+| 2026-06-26 | Team B | 修复了应用内嵌浏览器链接弹新窗口、网页清洗后 Markdown 图片与块级链接渲染异常、以及 entry 卡片格式问题。 |
