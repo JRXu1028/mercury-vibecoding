@@ -1,217 +1,482 @@
-# Team D 工作日志
+# Vibe Reader 项目协作纪实
 
-> 本文档记录 Team D 在 Vibe Reader 项目中的工作内容、版本迭代与工程化实践。
-
----
-
-## 一、项目概述
-
-- **项目代号**：Mercury Vibecoding（仓库保留）
-- **应用名**：Vibe Reader（v0.2.0 起重命名）
-- **类型**：基于 Electron + Vue 3 的本地优先桌面 RSS 阅读器
-- **D 组职责**：基础设施 & 集成
-  - 项目脚手架与构建配置
-  - IPC 规范与 contextBridge 桥接
-  - SQLite 数据库 Schema 与迁移
-  - 全局布局
-  - 跨平台打包配置
-  - CI/CD 自动化
-  - 项目文档
+> 一段 D 组（陈岩松）与 AI 协作伙伴（智谱 GLM-5.2 / DeepSeek V4 Pro）共同完成的项目历程。
+> 从 2026-06-09 首次协作到 2026-06-26 演示准备完成，记录每一次交互、决策与产出。
 
 ---
 
-## 二、版本迭代记录
+## 序章 · 起点
 
-### v0.1.0（2026-06-09）：首版发布
+时间回到 2026-06-09。
 
-**交付内容**：
-- 项目脚手架（TypeScript + Vue 3 + Vite + Electron）
-- SQLite 数据库 6 张表 + 迁移机制
-- 25 个 IPC 通道
-- macOS arm64 dmg/zip 打包
+陈岩松是项目 D 组（基础设施 & 集成组）的唯一成员，负责项目脚手架、IPC 规范、数据库 Schema、全局布局、打包配置与文档。其他组（A/B/C）已经陆陆续续把代码合并到了 main 分支，但 D 组需要把这些工作"打包成用户能下载的成品"。
 
-### v0.2.0（2026-06-16）：应用更名 + Team B/C 改动集成
+那天陈岩松打开终端，对着 AI 协作伙伴说：
 
-**交付内容**：
-- 应用更名：Mercury Vibecoding → Vibe Reader
-- 集成 Team B 内嵌浏览器阅读模式改进（滚动条修复、403 fallback）
-- 集成 Team C 流式摘要生成（SSE 推送）与 AI 结果持久化
-- 44/44 单元测试通过
-- macOS arm64 三平台构建首次完整跑通
+> 「你的任务是维护完成 https://github.com/JRXu1028/mercury-vibecoding，我是 D 组的，你看看这两天有没有什么更新需要我去重新迭代打包的。」
 
-**工程决策**：
-- 应用更名属破坏性变更，发新 tag v0.2.0 而非覆盖 v0.1.0，保留历史版本
-- userData 目录由 `mercury-vibecoding/` 变更为 `Vibe Reader/`，文档补充迁移说明
-
-### v0.2.1（2026-06-16）：自定义应用图标
-
-**交付内容**：
-- 设计并集成 1024×1024 应用图标（`build/icon.png`）
-- electron-builder 配置三平台 icon 字段
-- 自动生成 macOS `.icns` / Windows `.ico` / Linux 多尺寸
-- `.gitignore` 例外配置保留 `build/icon.*` 入仓
-
-### v0.2.4（2026-06-17）：CI/CD 跨平台自动化
-
-**目标**：实现 push tag 自动触发三平台构建 + Release 发布。
-
-**方案选型**：
-- GitHub Actions 矩阵构建（公开仓库免费额度）
-- Tag-driven release 工作流
-- 三平台并行（macos-latest / windows-latest / ubuntu-latest）
-
-**工作流设计**（`.github/workflows/release.yml`）：
-- 触发条件：`push tag v*` 启动完整流程；`push main` 仅跑测试；`workflow_dispatch` 手动触发
-- 测试矩阵：Node.js 22 + 24（覆盖 `node:sqlite` 跨版本兼容性）
-- 构建矩阵：macOS dmg+zip / Windows nsis / Linux AppImage+deb
-- 缓存：通过 `setup-node` 自动缓存 npm 依赖
-- 发布：`softprops/action-gh-release` 自动上传产物至 Releases
-
-**实施过程**：经过三轮迭代解决以下工程问题
-1. electron-builder 自动发布机制与 token 权限冲突 → 配置 `publish: null` 禁用，由 release job 统一处理
-2. Linux 构建缺失 `dist:linux` 脚本 → 补全打包脚本
-3. Linux deb 目标需 `author` 字段含 email → 补全 package.json 元数据
-
-**结果**：v0.2.4 起，三平台并行构建约 8-10 分钟完成，6/6 jobs 全绿。
-
-### v0.2.5（2026-06-24）：UI 体验迭代集成
-
-**集成改动**：
-- Team A：侧栏折叠面板文本/图标自适应；删除冗余 Header 栏回收垂直空间
-- Team B：内嵌浏览器支持前进/后退/刷新（webContents 导航栈）
-- Team C：流式摘要非阻塞（SSE + `ai:summaryChunk` IPC）；AI 结果持久化（`aiResultService.ts` + `ai:getLatestResults` IPC）
-- Team D：版本管理 + CI 自动构建发布
+故事就从这里开始。
 
 ---
 
-## 三、技术实现概览
+## 第一章 · v0.2.0 集成与打包（2026-06-09）
 
-### 3.1 IPC 通道清单
+### 1.1 拉取发现
 
-| 方向 | 数量 | 用途 |
-|---|---|---|
-| R → M（ipcMain.handle） | 31 | 订阅源、文章、AI、笔记、标签、Provider 管理 |
-| M → R（webContents.send） | 4 | 流式摘要推送、翻译分段推送、应用日志 |
+AI 伙伴先用 `gh api` 拉取了仓库最新提交：
 
-**核心文件**：
-- `electron/preload.cjs`：contextBridge 安全桥接 4 命名空间（teamAApi / teamBApi / teamCApi / teamDApi）
-- `src/electronMain.ts`：主进程 IPC handler 注册
-- `frontend/src/api/client.ts`：渲染进程 API 客户端，自动切换桌面 IPC / 开发模式 HTTP
+```
+5711f97 2026-06-16 Update README.md
+4cfc64e 2026-06-16 Merge pull request #1 from JRXu1028/TEAM_B_fix0
+c231741 2026-06-16 fix: keep embedded browser scrollbar usable
+66ce31f 2026-06-16 fix: improve team b reader browser
+c293492 2026-06-13 feat(team-c): persist and display latest AI results
+ab4a197 2026-06-13 feat(team-c): add streaming summary generation
+1d2e5c9 2026-06-12 fix: fall back when article fetch is blocked
+5db0f30 2026-06-09 docs: update for Team B Reader rewrite
+```
 
-### 3.2 数据库 Schema
+8 个新提交，涉及 Team B（阅读器改进）、Team C（流式摘要 + 持久化）。
 
-10 张表 + 增量迁移机制：
+陈岩松：**「你试试，文件都在代码文件夹目录下的同名目录的」**
 
-| 表 | 用途 |
-|---|---|
-| feeds | RSS 订阅源 |
-| entries | 文章条目 + 清洗正文缓存 |
-| llm_providers | AI Provider 配置 |
-| llm_usage | Token 用量记录 |
-| notes | 笔记 |
-| tags | 标签 |
-| entry_tags | 文章-标签关联 |
-| aiResults | AI 结果持久化（v0.2.5 新增） |
+AI 伙伴找到 `/Users/a123/代码/mercury-vibecoding`，确认本地仓库存在，开始处理。
 
-**核心文件**：`src/database.ts`（166 行）
+### 1.2 第一个坎：未提交改动
 
-### 3.3 后端服务层
+```
+modified:   frontend/package-lock.json
+modified:   frontend/package.json
+```
 
-| 文件 | 用途 |
-|---|---|
-| `src/logger.ts` | 统一日志，M→R 推送 |
-| `src/notesService.ts` | 笔记 CRUD |
-| `src/tagsService.ts` | 标签 CRUD + 关联 |
-| `src/usageService.ts` | AI 用量记录 |
+本地有未提交的 package.json 改动挡住了 pull。AI 伙伴用 `git stash` 暂存，pull 成功拉取 8 个提交。
 
-### 3.4 全局布局
+### 1.3 测试与打包
 
-`frontend/src/App.vue`：三栏布局（Feed Sidebar / Entry List / Detail Pane）+ 全局日志通知。
+```
+npm install
+npm --prefix frontend install
+npm test
+```
 
-### 3.5 打包配置
+测试结果：**44/44 全过**。
 
-`package.json` `build` 字段：
-- appId: `com.vibe-reader`
-- productName: `Vibe Reader`
-- icon: `build/icon.png`（自动生成多平台多尺寸）
-- 目标：macOS dmg+zip / Windows nsis / Linux AppImage+deb
-- `publish: null`（由 CI release job 统一发布）
+```
+npm run dist
+```
+
+打包成功，产物：
+- `Vibe Reader-0.1.0-arm64.dmg` (140MB)
+- `Vibe Reader-0.1.0-arm64-mac.zip` (135MB)
+
+### 1.4 关键发现：应用更名
+
+打包日志显示 `Vibe Reader.app`——其他组已经把应用从 "Mercury Vibecoding" 改名为 "Vibe Reader"。
+
+陈岩松和 AI 伙伴讨论后决定：**发新 tag v0.2.0**，而非覆盖 v0.1.0，保留历史版本。
+
+### 1.5 第二个坎：上传卡死
+
+```bash
+gh release create v0.2.0 \
+  "release/Vibe Reader-0.1.0-arm64.dmg" \
+  "release/Vibe Reader-0.1.0-arm64-mac.zip" \
+  ...
+```
+
+140MB dmg 上传到 GitHub Release，卡在 0 字节不动。AI 伙伴排查发现：**本地 HTTP 代理 127.0.0.1:1082 reset 大文件上传**。
+
+陈岩松：**「Failed with non-blocking status code: Error: Bun not found. Please install Bun」这个什么意思？**
+
+这是 claude-mem 插件的 Bun 报错，跟项目无关。AI 伙伴解释后继续主任务。
+
+### 1.6 文档全面同步
+
+AI 伙伴识别出多份文档有过期引用：
+- `INSTALL_GUIDE.md`：所有 "Mercury Vibecoding" → "Vibe Reader"，环境变量启动路径更新
+- `README.md`：架构图标题、应用名说明
+- `TEAM_D.md`：IPC 清单补 `ai:getLatestResults` + `ai:summaryChunk`，release 表加 v0.2.0
+- `TEAM_C.md`：标 API Key / 持久化 / 流式为已实现
+
+提交并推送。Release v0.2.0 完成。
 
 ---
 
-## 四、最终交付清单
+## 第二章 · Bun 错误的插曲（2026-06-09）
 
-### 代码（D 组实现）
-| 文件 | 用途 |
-|---|---|
-| `electron/preload.cjs` | contextBridge 桥接 |
-| `src/electronMain.ts` | 主进程 IPC |
-| `src/database.ts` | SQLite 数据库 + 迁移 |
-| `src/logger.ts` | 统一日志 |
-| `src/notesService.ts` | 笔记服务 |
-| `src/tagsService.ts` | 标签服务 |
-| `src/usageService.ts` | 用量记录服务 |
-| `frontend/src/api/client.ts` | 双通道 API 客户端 |
-| `frontend/src/App.vue` | 全局布局 |
-| `.github/workflows/release.yml` | CI/CD 工作流 |
+打包期间陈岩松问：**「Failed with non-blocking status code: Error: Bun not found」**
 
-### 配置
-- `package.json`：依赖、脚本、electron-builder 配置
-- `tsconfig.json`：TypeScript 编译配置
-- `build/icon.png`：应用图标
-- `.gitignore`：构建产物与依赖排除规则
+AI 伙伴追溯 `claude-mem` 插件的 `bun-runner.js`：
+- 第 96-102 行：找不到 Bun 直接 `exit(1)`，无 Node fallback
+- 第一次尝试：改成 Node fallback → 但 `worker-service.cjs` 硬依赖 `bun:sqlite`，Node 没有
 
-### 文档
-- `README.md`：项目总览
-- `TEAM_D.md`：D 组规格书
-- `INSTALL_GUIDE.md`：用户安装指南
-- `TEST_DATA.md`：演示测试数据
-- `DEMO_GUIDE.md`：演示脚本
-- `.github/workflows/README.md`：CI/CD 使用说明
+陈岩松：**「能修复吗，他报错肯定有原因呀，修复一下」**
 
-### Release 历史
+AI 伙伴分析后决定：装 Bun。
 
-| 版本 | 日期 | 平台 | 关键内容 |
+```bash
+curl -fsSL https://bun.sh/install | bash
+bun --version  →  1.3.14
+```
+
+装好。Bun 报错清除。
+
+---
+
+## 第三章 · 应用图标 v0.2.1（2026-06-16）
+
+### 3.1 任务缘起
+
+陈岩松看 D 组待办：「P3 应用图标 + 代码签名」未做。AI 伙伴解释：
+- **图标**：自己做，0 成本，视觉必要
+- **签名**：99 美元/年 Apple Developer，课设可选
+
+陈岩松决定先做图标。
+
+### 3.2 GPT-4 提示词设计
+
+陈岩松：**「我可以去 gpt 生成一个你给我一套生成提示词就行」**
+
+AI 伙伴提供 4 种风格的 GPT-4 / Midjourney / 即梦 提示词：
+1. 极简矢量
+2. 现代渐变玻璃感
+3. 复古印刷感
+4. 抽象波形
+
+每个都明确 1024×1024、无文字、留 squircle 裁剪边距。
+
+### 3.3 图标接入
+
+陈岩松生成图后保存到 `build/icon.png`。
+
+AI 伙伴检查发现：尺寸 1254×1254，不是 1024。
+
+```bash
+sips -z 1024 1024 build/icon.png
+```
+
+修正。然后改 `package.json`：
+- 加 `"directories.buildResources": "build"`
+- 加 `mac.icon` / `win.icon` / `linux.icon` 都指向 `build/icon.png`
+- bump 版本到 v0.2.1
+
+### 3.4 第三个坎：.gitignore 例外
+
+`git add build/icon.png` 失败：
+```
+The following paths are ignored by one of your .gitignore files: build
+```
+
+原因：Python 模板的 `.gitignore` 排除了 `build/`。AI 伙伴加例外：
+```
+build/
+!build/icon.png
+!build/icon.icns
+!build/icon.ico
+```
+
+但例外不生效——git 不扫描被忽略目录。最终用 `git add -f build/icon.png` 强制入仓。
+
+### 3.5 打包验证
+
+```
+npm run dist
+```
+
+打包日志这次**没有** "default Electron icon is used" 警告——图标生效。
+
+```bash
+ls "release/mac-arm64/Vibe Reader.app/Contents/Resources/icon.icns"
+```
+
+`.icns` 已生成在 app bundle 内。v0.2.1 发布。
+
+---
+
+## 第四章 · CI/CD 跨平台之战（2026-06-16 → 2026-06-17）
+
+### 4.1 需求浮现
+
+陈岩松：**「能不能实现一个其他组上传东西我们能及时去打包更新呀」**
+
+AI 伙伴给出 3 方案对比：
+- GitHub Actions（推荐）
+- 本地 cron 脚本
+- 手动打包
+
+陈岩松确认：用 GitHub Actions。
+
+### 4.2 发现仓库已有 workflow
+
+AI 伙伴检查发现仓库已有简陋版 `build-release.yml`：
+- 无 Linux
+- 无测试 gate
+- 无缓存
+- 用 `npm install`（非 `npm ci`）
+
+两者并存会冲突。AI 伙伴删了旧的，写新的 `release.yml`。
+
+### 4.3 workflow 设计
+
+```yaml
+触发：push tag v* 或 workflow_dispatch
+jobs:
+  test: Node 22/24 矩阵
+  build: macos/windows/ubuntu-latest 矩阵
+  release: 收集 artifacts + 自动发布
+```
+
+带缓存（`setup-node` 的 `cache: 'npm'`）、artifact 上传、`softprops/action-gh-release`。
+
+### 4.4 第一次跑 v0.2.2
+
+CI 结果：
+- Test (Node 22/24) ✅
+- Build (mac/win/linux) **全部 ❌**
+
+报错：
+```
+HttpError: 403 Forbidden
+"Resource not accessible by integration"
+```
+
+AI 伙伴分析：electron-builder 看到 `GH_TOKEN` env var 就尝试自动发 release，但 token 在 build job 上下文权限不足。
+
+修复：
+- workflow build 步骤 `GH_TOKEN: ''`
+- `package.json` 加 `"publish": null`
+
+### 4.5 第二次跑 v0.2.3
+
+CI 结果：
+- Test ✅
+- Mac ✅ Windows ✅
+- Linux ❌
+
+报错：
+```
+npm error Missing script: "dist:linux"
+```
+
+修复：补 `dist:linux` 脚本。
+
+### 4.6 第三次跑 v0.2.4
+
+CI 结果：
+- Mac ✅ Win ✅ Linux ❌
+
+报错：
+```
+Please specify author 'email' in the application package.json
+```
+
+Linux deb 目标要求 author email。修复：加 `author: {name, email}` + `description`。
+
+### 4.7 第四次跑 v0.2.4（终）
+
+```
+✅ Test (Node 22)
+✅ Test (Node 24)
+✅ Build (macos-latest)
+✅ Build (windows-latest)
+✅ Build (ubuntu-latest)
+✅ Publish release
+```
+
+6/6 全绿。Release 自动发布：
+- `Vibe.Reader-0.2.4-arm64.dmg` (142MB)
+- `Vibe.Reader-0.2.4-arm64-mac.zip` (136MB)
+- `Vibe.Reader.Setup.0.2.4.exe` (117MB)
+- `Vibe.Reader-0.2.4.AppImage` (154MB)
+- `vibe-reader_0.2.4_amd64.deb` (118MB)
+
+5 个产物，三平台全覆盖。**这场 CI/CD 战役历经 4 轮迭代终于胜利**。
+
+---
+
+## 第五章 · 网络困境（2026-06-17）
+
+期间遇到最大网络障碍。
+
+陈岩松问上传为什么慢。AI 伙伴排查：
+- 系统代理：HTTP/HTTPS via 127.0.0.1:1082
+- 大文件上传被代理 reset（unexpected EOF）
+- 关代理直连 → GFW 拦截（TLS handshake timeout）
+
+死循环：开代理被 reset，关代理被墙。
+
+最终解决方案：**用 tag 触发 CI**，绕开本地上传。`git push --tags` 是小数据（只推 ref），不会被代理 reset。CI 在 GitHub 美国服务器跑，发布也走 GitHub 内部，跟用户网络无关。
+
+陈岩松：**「怎么说」**
+AI 伙伴：简明给出方案 → 关代理打 tag → CI 全自动。
+
+---
+
+## 第六章 · v0.2.5 折叠面板集成（2026-06-24）
+
+### 6.1 又一波更新
+
+陈岩松：**「看看有没有更新，然后我d组还需要做什么吗，打包一下」**
+
+AI 伙伴 `git pull` 发现 1 个新提交：
+```
+db2bace Merge pull request #2 from JRXu1028/codex/fix-collapsed-layout
+c227060 fix collapsed panes and reclaim header space
+```
+
+Team A 的折叠面板文本适配 + Header 精简。纯前端改动。
+
+### 6.2 流程已成熟
+
+这次流程非常顺：
+1. bump 版本 → v0.2.5
+2. `git tag v0.2.5 && git push --tags`
+3. CI 自动跑（已配好的 workflow）
+4. 8 分钟后 6/6 jobs 全绿
+5. 5 平台产物自动发布
+
+**前几章磨出来的 CI/CD 此时已经"开箱即用"**。
+
+---
+
+## 第七章 · 演示前夕（2026-06-25 → 2026-06-26）
+
+### 7.1 紧迫感来临
+
+陈岩松：**「我明天要展示了，帮我 clone 最新的版本下来，教我怎么去演示这个项目」**
+
+并明确列了本周 6 项改动：
+1. 侧栏折叠时文本没做适配
+2. 摘要生成时不能堵塞其他操作，用流式
+3. 摘要和翻译没有持久化存储
+4. 链接 app 内打开要能 back/forward，不要新开 app
+5. 名字不要叫 mercury
+6. 界面上方占用区域太多，删这一栏
+
+### 7.2 演示指南撰写
+
+AI 伙伴写了 `DEMO_GUIDE.md`，10 步流程：
+- Step 1 启动与命名（#5、#6）
+- Step 4 流式摘要 + 非阻塞（#2）⭐
+- Step 5 AI 结果持久化（#3）⭐
+- Step 6 内嵌浏览器 forward/back（#4）⭐
+- Step 7 侧栏折叠文本适配（#1）⭐
+
+每步配话术，8 分钟时间轴。
+
+### 7.3 一个小修正
+
+陈岩松：**「顶部状态栏可见 Token 用量统计 这个我没看见呀」**
+
+AI 伙伴 grep 代码发现：Token 用量统计实际在 **Provider 面板底部**（齿轮图标 → 用量统计区），不是顶部状态栏。修正 DEMO_GUIDE。
+
+### 7.4 通俗解释 IPC 与 Schema
+
+陈岩松：**「我是小白，给我讲通俗易懂一点」**
+
+AI 伙伴用类比讲：
+- **IPC = 餐厅服务员手册**（前端点菜 / 后端做菜 / IPC 传单）
+- **Schema = Excel 多 sheet 设计**（10 张表存不同数据）
+- **CI/CD = GitHub 免费借 3 台云电脑并行打包**（8 分钟三平台齐活）
+
+### 7.5 协作纪实成稿
+
+陈岩松：**「我跟你交互的这个过程可以形成一个完整的交互过程的文档吗」**
+
+—— 也就是本文档。
+
+---
+
+## 第八章 · D 组职责全景（2026-06-26 最终核对）
+
+陈岩松：**「项目脚手架、IPC 规范、数据库 schema、全局布局、打包配置、文档我的这些负责的内容怎么体现的」**
+
+AI 伙伴用代码 + git blame 核对，给出 D 组工作清单：
+
+### 8.1 代码贡献
+
+| 文件 | 行数 | 内容 | D 组独立 |
 |---|---|---|---|
-| v0.1.0 | 2026-06-09 | macOS arm64 | 首版（Mercury Vibecoding） |
-| v0.2.0 | 2026-06-16 | macOS arm64 | 更名 Vibe Reader + Team B/C 集成 |
-| v0.2.1 | 2026-06-16 | macOS arm64 | 自定义应用图标 |
-| v0.2.4 | 2026-06-17 | 三平台 | CI/CD 跨平台首次完整跑通 |
-| v0.2.5 | 2026-06-24 | 三平台 | UI 体验迭代（折叠、流式、内嵌浏览器导航） |
+| `electron/preload.cjs` | 97 | contextBridge 4 命名空间 | ✅ |
+| `src/electronMain.ts` | 556 | 31 R→M + 4 M→R IPC | ✅ |
+| `src/database.ts` | 166 | 10 表 + 迁移 | ✅（Team C 改过 aiResults） |
+| `src/logger.ts` | — | 统一日志 | ✅ |
+| `src/notesService.ts` | — | 笔记 CRUD | ✅ |
+| `src/tagsService.ts` | — | 标签 CRUD | ✅ |
+| `src/usageService.ts` | — | AI 用量记录 | ⚠️ D 写骨架，Team C 加字段 |
+| `frontend/src/api/client.ts` | 330 | 双通道 API | ✅ |
+| `frontend/src/App.vue` | 288 | 三栏布局 | ✅ |
+| `.github/workflows/release.yml` | 80+ | CI/CD 工作流 | ✅ |
+
+### 8.2 关键数据
+
+- **10 张 SQLite 数据表** + 增量迁移机制
+- **31 个 R→M IPC 通道** + **4 个 M→R 推送**（共 35 个）
+- **3 平台并行 CI 构建**（mac/win/linux）
+- **44 个单元测试**，全过
+- **5 个 Release 版本**（v0.1.0 → v0.2.5）
+
+### 8.3 文档贡献（9 份）
+
+`README.md` / `TEAM_D.md` / `INSTALL_GUIDE.md` / `TEST_DATA.md` / `DEMO_GUIDE.md` / `TEAM_D_WORKLOG.md`（本文） / `.github/workflows/README.md` / 历史快照文档
 
 ---
 
-## 五、工程决策记录
+## 终章 · 经验沉淀
 
-### 5.1 发版策略
-- **代码改动**：push main 自动跑测试，不发版
-- **要发版**：bump version + tag + push tag → CI 自动三平台构建 + Release
-- **CI 迭代期**：中间版本号（v0.2.2 / v0.2.3）仅用于内部调试
+### 9.1 协作模式总结
 
-### 5.2 应用更名处理
-- 仓库保留 `mercury-vibecoding` 代号（课程作业历史标识）
-- 应用 `productName` 改为 `Vibe Reader`
-- v0.1.0 → v0.2.0 userData 路径变更，文档补充迁移说明
+陈岩松（产品负责人）+ AI 协作伙伴（GLM-5.2 / DeepSeek V4 Pro）的分工：
 
-### 5.3 跨平台构建方案
-- GitHub Actions 矩阵构建（vs. 本地多机手动打包）
-- 优势：免费额度、可重复、跨平台一致性、其他组 push 即自动测试
-- 缺点：CI 迭代期需多轮调试
+| 陈岩松 | AI 协作伙伴 |
+|---|---|
+| 决策（发版策略、跳过签名、用 CI/CD） | 调研（拉取代码、分析报错、给方案） |
+| 提供素材（生成图标 PNG、列改动清单） | 执行（写代码、跑测试、修 workflow） |
+| 验证（亲眼确认 Token 位置不在顶部） | 工程化（写文档、维护 git 历史） |
+| 把控方向（不让 AI 跑偏） | 解释概念（IPC / Schema / CI 通俗化） |
+
+### 9.2 关键经验
+
+1. **代理 + GFW 是国内开发的永恒痛点**——用 CI 在境外服务器跑构建，从根上绕开
+2. **跨平台 CI 一定有平台特定坑**（签名、脚本、字段），迭代 3-4 轮很正常
+3. **小数据走代理 OK，大文件上传会被 reset**——能走 git tag 就别走 release upload
+4. **应用更名是破坏性变更**——发新 tag 保留历史比覆盖更负责
+5. **文档跟代码同等重要**——v0.2.0 更名后花了一整章同步所有文档引用
+6. **AI 协作伙伴擅长调研 + 执行 + 工程化**，但**决策和验证必须人来做**
+
+### 9.3 模型选择
+
+- **GLM-5.2**（智谱）：日常交互主力，对话流畅，中文理解到位
+- **DeepSeek V4 Pro**：技术细节、代码生成、长上下文任务
+- **GPT-4 / Midjourney**：图标设计（外部工具）
+- **Bun 1.3.14**：claude-mem 插件依赖
 
 ---
 
-## 六、后续可优化项
+## 附：版本时间线
 
-| 项 | 价值 | 备注 |
-|---|---|---|
-| macOS 代码签名 + notarize | 商业发布必需 | 需 Apple Developer 证书 |
-| Windows arm64 包 | 覆盖 Surface 等设备 | CI 矩阵扩展 |
-| Test coverage CI 上传 | 工程化指标 | c8 / istanbul |
-| DMG 背景图设计 | macOS 安装体验 | 设计稿 + electron-builder 配置 |
-| 自动 release notes 模板 | 版本说明标准化 | GitHub release.yml 配置 |
+```
+2026-06-09  v0.2.0  更名 Vibe Reader + Team B/C 集成
+2026-06-09          Bun 错误排查修复
+2026-06-16  v0.2.1  自定义应用图标
+2026-06-17  v0.2.4  CI/CD 三平台首次跑通（4 轮迭代）
+2026-06-24  v0.2.5  折叠面板 + 流式 + 内嵌浏览器导航
+2026-06-25          演示准备启动
+2026-06-26          协作纪实成稿（本文）
+```
 
 ---
 
-**文档版本**：1.0
+## 附：协作伙伴署名
+
+- **D 组负责人**：陈岩松
+- **AI 协作伙伴**：
+  - 智谱 GLM-5.2（日常交互）
+  - DeepSeek V4 Pro（代码生成）
+  - Claude Opus 4.7（早期 commit co-author，迁移至 GLM-5.2 后交接）
+- **外部工具**：GPT-4 / Midjourney（图标设计）、Bun（claude-mem 依赖）
+
+---
+
+**文档版本**：2.0（纪实版）
 **最后更新**：2026-06-26
-**作者**：Team D（陈岩松）、Claude（Anthropic）
