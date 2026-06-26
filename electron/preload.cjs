@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('teamAApi', {
 
 const translationSegmentListeners = new Set()
 const summaryChunkListeners = new Set()
+const webviewNewWindowListeners = new Set()
 
 ipcRenderer.on('ai:translationSegment', (_event, data) => {
   for (const listener of translationSegmentListeners) {
@@ -49,6 +50,16 @@ ipcRenderer.on('ai:translationSegment', (_event, data) => {
 
 ipcRenderer.on('ai:summaryChunk', (_event, data) => {
   for (const listener of summaryChunkListeners) {
+    try {
+      listener(data)
+    } catch {
+      // Ignore listener errors.
+    }
+  }
+})
+
+ipcRenderer.on('webview:new-window', (_event, data) => {
+  for (const listener of webviewNewWindowListeners) {
     try {
       listener(data)
     } catch {
@@ -93,5 +104,11 @@ contextBridge.exposeInMainWorld('teamBApi', {
   deleteTag: (tagId) => ipcRenderer.invoke('tags:delete', { tagId }),
   addTagToEntry: (entryId, tagId) => ipcRenderer.invoke('tags:addToEntry', { entryId, tagId }),
   removeTagFromEntry: (entryId, tagId) => ipcRenderer.invoke('tags:removeFromEntry', { entryId, tagId }),
-  getTagsForEntry: (entryId) => ipcRenderer.invoke('tags:getForEntry', { entryId })
+  getTagsForEntry: (entryId) => ipcRenderer.invoke('tags:getForEntry', { entryId }),
+  onWebviewNewWindow: (callback) => {
+    webviewNewWindowListeners.add(callback)
+    return () => {
+      webviewNewWindowListeners.delete(callback)
+    }
+  }
 })

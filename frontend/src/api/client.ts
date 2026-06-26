@@ -324,7 +324,14 @@ export const teamBApi = {
     if (bridgeB) {
       return await bridgeB.getTagsForEntry(entryId)
     }
-    const data = await request<{ tags: TagItem[] }>(`/api/entries/${entryId}/tags`)
+    const data = await request<{ tags: TagItem[] }>('/api/entries/' + entryId + '/tags')
     return data.tags
+  },
+
+  onWebviewNewWindow(callback: (data: { url: string }) => void): () => void {
+    if (bridgeB?.onWebviewNewWindow) {
+      return bridgeB.onWebviewNewWindow(callback)
+    }
+    return () => {}
   }
 }

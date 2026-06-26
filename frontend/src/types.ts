@@ -213,4 +213,5 @@ export interface TeamBBridgeApi {
   addTagToEntry(entryId: number, tagId: number): Promise<void>
   removeTagFromEntry(entryId: number, tagId: number): Promise<void>
   getTagsForEntry(entryId: number): Promise<TagItem[]>
+  onWebviewNewWindow(callback: (data: { url: string }) => void): () => void
 }

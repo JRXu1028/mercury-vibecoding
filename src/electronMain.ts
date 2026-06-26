@@ -532,6 +532,16 @@ function cleanupAndQuit(): void {
   }
 }
 
+app.on('web-contents-created', (_event, contents) => {
+  contents.setWindowOpenHandler(({ url }) => {
+    if (contents.getType() === 'webview') {
+      const parentWindow = BrowserWindow.fromWebContents(contents)
+      parentWindow?.webContents.send('webview:new-window', { url })
+    }
+    return { action: 'deny' }
+  })
+})
+
 app.whenReady().then(() => {
   initServices()
   registerIpcHandlers()

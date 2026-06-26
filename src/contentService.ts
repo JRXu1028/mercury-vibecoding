@@ -16,10 +16,102 @@ interface EntryContentRow {
   content_fetched_at: string | null
 }
 
+function hasImgDescendant(node: Node): boolean {
+  if (node.nodeName === 'IMG') return true
+  for (const child of node.childNodes) {
+    if (hasImgDescendant(child)) return true
+  }
+  return false
+}
+
+function findFirstImg(node: Node): HTMLImageElement | null {
+  if (node.nodeName === 'IMG') return node as HTMLImageElement
+  for (const child of node.childNodes) {
+    const found = findFirstImg(child)
+    if (found) return found
+  }
+  return null
+}
+
+function textContentExcludingImageAlt(node: Node): string {
+  let text = ''
+  for (const child of node.childNodes) {
+    if (child.nodeName === 'IMG') continue
+    if (child.nodeType === 3) {
+      text += child.textContent || ''
+    } else {
+      text += textContentExcludingImageAlt(child)
+    }
+  }
+  return text
+}
+
 const turndown = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
   bulletListMarker: '-'
+})
+
+turndown.addRule('imageLink', {
+  filter: (node) => {
+    if (node.nodeName !== 'A') return false
+    if (!hasImgDescendant(node)) return false
+    const visibleText = textContentExcludingImageAlt(node)
+    return visibleText.trim() === ''
+  },
+  replacement: (_content, node) => {
+    const anchor = node as HTMLAnchorElement
+    const img = findFirstImg(anchor)
+    if (!img) return ''
+    const href = anchor.getAttribute('href') || ''
+    const src = img.getAttribute('src') || ''
+    const alt = img.getAttribute('alt') || ''
+    return `[![${alt}](${src})](${href})`
+  }
+})
+
+const BLOCK_LINK_TAGS = ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']
+
+turndown.addRule('blockLink', {
+  filter: (node) => {
+    if (node.nodeName !== 'A') return false
+    if (hasImgDescendant(node)) return false
+    const elementChildren = Array.from(node.childNodes).filter(
+      (child) => child.nodeType === 1
+    )
+    return (
+      elementChildren.length === 1 &&
+      BLOCK_LINK_TAGS.includes(elementChildren[0].nodeName)
+    )
+  },
+  replacement: (content, node) => {
+    const anchor = node as HTMLAnchorElement
+    const href = anchor.getAttribute('href') || ''
+    const child = anchor.firstElementChild
+    if (!child) return content
+    const trimmed = content.trim()
+    const headingMatch = child.nodeName.match(/^H([1-6])$/)
+    if (headingMatch) {
+      const prefix = '#'.repeat(Number(headingMatch[1])) + ' '
+      const text = trimmed.startsWith(prefix) ? trimmed.slice(prefix.length) : trimmed
+      return `\n\n${prefix}[${text}](${href})\n\n`
+    }
+    return `\n\n[${trimmed}](${href})\n\n`
+  }
+})
+
+turndown.addRule('digestPostEmbed', {
+  filter: (node) => {
+    return (
+      node.nodeName === 'DIV' &&
+      node.getAttribute('data-component-name') === 'DigestPostEmbed'
+    )
+  },
+  replacement: (content) => {
+    const trimmed = content.trim()
+    if (!trimmed) return ''
+    return `\n\n---\n\n${trimmed}\n\n---\n\n`
+  }
 })
 
 import { nowIso } from './utils.js'
@@ -92,13 +184,48 @@ function buildFallbackHtml(entry: EntryContentRow, reason: string): string {
   `, entry.url)
 }
 
+function normalizeDigestEmbeds(html: string, baseUrl: string): string {
+  const dom = new JSDOM(html, { url: baseUrl })
+  const embeds = dom.window.document.querySelectorAll(
+    '[data-component-name="DigestPostEmbed"]'
+  )
+
+  for (const embed of embeds) {
+    const titleLink = embed.querySelector('a > h2')?.parentElement as HTMLAnchorElement | null
+    if (!titleLink) continue
+
+    const url = titleLink.getAttribute('href') || ''
+    const titleHeading = titleLink.querySelector('h2')
+    if (!titleHeading) continue
+
+    const plainHeading = dom.window.document.createElement('h2')
+    plainHeading.innerHTML = titleHeading.innerHTML
+    titleLink.replaceWith(plainHeading)
+
+    for (const p of embed.querySelectorAll('p')) {
+      if ((p.textContent || '').trim() === '·') {
+        p.remove()
+      }
+    }
+
+    const readMore = dom.window.document.createElement('p')
+    readMore.innerHTML = `<a href="${url}">Read full story →</a>`
+    embed.appendChild(readMore)
+  }
+
+  const normalized = dom.window.document.body.innerHTML
+  dom.window.close()
+  return normalized
+}
+
 function contentFromHtml(entry: EntryContentRow, html: string, title: string, fetchedAt: string): EntryContent {
+  const normalized = normalizeDigestEmbeds(html, entry.url)
   return {
     entryId: entry.id,
     title,
     url: entry.url,
-    html,
-    markdown: turndown.turndown(html).trim(),
+    html: normalized,
+    markdown: turndown.turndown(normalized).trim(),
     fetchedAt
   }
 }

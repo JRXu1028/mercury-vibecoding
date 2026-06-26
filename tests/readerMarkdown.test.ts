@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { renderMarkdownToHtml } from '../frontend/src/utils/readerMarkdown'
+import { renderMarkdownToHtml, simpleMarkdownToHtml } from '../frontend/src/utils/readerMarkdown'
 
 describe('reader Markdown rendering', () => {
   it('renders Markdown to sanitized HTML for the reader view', () => {
@@ -25,5 +25,75 @@ const ok = true
     expect(html).toContain('<a href="https://example.com/post"')
     expect(html).not.toContain('<script')
     expect(html).not.toContain('alert')
+  })
+})
+
+describe('simpleMarkdownToHtml translation view', () => {
+  it('converts headings, lists and paragraphs', () => {
+    const html = simpleMarkdownToHtml(`# Title
+
+A paragraph with **bold** and *italic*.
+
+- item one
+- item two`)
+
+    expect(html).toContain('<h1>Title</h1>')
+    expect(html).toContain('<strong>bold</strong>')
+    expect(html).toContain('<em>italic</em>')
+    expect(html).toContain('<ul>')
+    expect(html).toContain('<li>item one</li>')
+  })
+
+  it('normalizes CRLF line endings', () => {
+    const html = simpleMarkdownToHtml('line one\r\nline two')
+    expect(html).not.toContain('\r')
+    expect(html).toContain('<br>')
+  })
+
+  it('renders image wrapped in a link with LF line breaks', () => {
+    const html = simpleMarkdownToHtml(`[
+![Alt](https://example.com/image.png)
+](https://example.com/link)`)
+
+    expect(html).toContain('<a href="https://example.com/link"')
+    expect(html).toContain('<img src="https://example.com/image.png"')
+    expect(html).not.toContain('<br>')
+  })
+
+  it('renders image wrapped in a link with CRLF line breaks', () => {
+    const html = simpleMarkdownToHtml(`[\r\n![Alt](https://example.com/image.png)\r\n](https://example.com/link)`)
+
+    expect(html).toContain('<a href="https://example.com/link"')
+    expect(html).toContain('<img src="https://example.com/image.png"')
+    expect(html).not.toContain('\r')
+    expect(html).not.toContain('<br>')
+  })
+
+  it('renders image wrapped in a link without line breaks', () => {
+    const html = simpleMarkdownToHtml('[![Alt](https://example.com/image.png)](https://example.com/link)')
+
+    expect(html).toContain('<a href="https://example.com/link"')
+    expect(html).toContain('<img src="https://example.com/image.png"')
+  })
+
+  it('preserves titles on image links', () => {
+    const html = simpleMarkdownToHtml(`[
+![Alt](https://example.com/image.png "Image title")
+](https://example.com/link "Link title")`)
+
+    expect(html).toContain('title="Link title"')
+    expect(html).toContain('title="Image title"')
+  })
+
+  it('does not convert image link syntax inside fenced code blocks', () => {
+    const html = simpleMarkdownToHtml(`\`\`\`md
+[
+![Alt](https://example.com/image.png)
+](https://example.com/link)
+\`\`\``)
+
+    expect(html).toContain('<pre><code')
+    expect(html).not.toContain('<a href="https://example.com/link"')
+    expect(html).not.toContain('<img src="https://example.com/image.png"')
   })
 })

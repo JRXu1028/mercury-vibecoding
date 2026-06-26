@@ -10,6 +10,9 @@ This implementation covers the Team B responsibilities from `mercury-vibecoding/
 - Markdown conversion and caching
 - Reader detail view
 - Reader theme, font size, line height, and Markdown preview controls
+- Reader Markdown-first rendering
+- In-app link opening with browser-style navigation
+- Blocked article fetch fallback behavior
 
 ## Architecture
 
@@ -19,6 +22,7 @@ This implementation covers the Team B responsibilities from `mercury-vibecoding/
 - HTML cleaning: `DOMPurify`
 - Markdown conversion: `turndown`
 - Reader UI: Vue 3 + Element Plus
+- In-app browser: Electron `<webview>` embedded in the reader UI
 
 ## Data Model
 
@@ -42,6 +46,17 @@ The Team B content service performs this pipeline:
 6. Convert cleaned HTML to Markdown with `turndown`.
 7. Cache both cleaned HTML and Markdown in SQLite.
 8. Return the cleaned content to the renderer.
+
+The reader view renders from the cached Markdown instead of directly displaying cleaned HTML. This keeps the display path aligned with the Markdown cache used by AI summary and translation flows.
+
+If the original article page blocks server-side fetching, for example with HTTP `403`, the content service no longer throws an error to the renderer. It builds a fallback article from:
+
+- the RSS entry title
+- the fetch failure reason
+- the RSS summary
+- the original article link
+
+The fallback is sanitized, converted to Markdown, cached, and returned through the same `EntryContent` shape.
 
 Main backend entry points:
 
@@ -100,14 +115,40 @@ When the user selects an entry, the reader automatically loads cleaned content t
 
 The reader supports:
 
-- Cleaned HTML reader view
+- Markdown-rendered reader view
 - Markdown view
 - Manual content refresh
 - Light, sepia, and dark themes
+- Classic, editorial, and technical style templates
 - Font size range: `12` to `18`
 - Line height range: `1.4` to `2.2`
 
 If article fetching or extraction fails, the pane falls back to the RSS summary and shows the error state.
+
+### Reader Link Opening
+
+Reader links can be opened in two ways:
+
+- `Open in Browser`: opens the URL in the system browser.
+- `Open in App`: opens the URL inside the app.
+
+The in-app browser is implemented as an embedded Electron `<webview>` panel, not a separate Electron `BrowserWindow`. It supports:
+
+- Back
+- Forward
+- Reload
+- Address bar navigation
+- Open current page in the system browser
+- Red close icon in the toolbar
+- Resizing from all four edges and all four corners
+
+The app validates supported in-app protocols through the main process and returns a normalized URL to the renderer. The renderer owns the embedded browser UI and history controls.
+
+The embedded browser layout was adjusted so the web page fills the full area below the toolbar. A dedicated frame wraps the `<webview>`, and the webview is positioned to fill that frame to avoid partial rendering or large blank areas.
+
+### App Naming
+
+User-facing product text was changed from `Mercury Vibecoding` to `Vibe Reader` in the app title, package metadata, OPML export title, OPML export file name, and CLI banner.
 
 ## Minimum Demo Flow
 
@@ -121,6 +162,9 @@ If article fetching or extraction fails, the pane falls back to the RSS summary 
 8. Switch between `Reader` and `Markdown`.
 9. Adjust theme, font size, and line height.
 10. Use the refresh button to force re-fetch and re-clean the article.
+11. Click `Open Source` or a reader link.
+12. Choose `Open in App`.
+13. Confirm the in-app browser opens inside the app with back/forward controls and a resizable window.
 
 ## API Demo
 
@@ -145,6 +189,7 @@ Team B adds coverage for:
 
 - Cleaning and Markdown conversion from a mocked article page
 - Caching cleaned content to avoid repeated fetches
+- Fallback Markdown generation when article fetching is blocked, including HTTP `403`
 - SQLite database parent directory creation
 
 Run all tests:
@@ -152,3 +197,74 @@ Run all tests:
 ```bash
 npm test
 ```
+
+Recent verification commands used for Team B fixes:
+
+```bash
+npm test
+npm run build
+npm --prefix frontend run build
+npm --prefix frontend run typecheck
+```
+
+## Recent Bug Fixes
+
+### Markdown Image Link Rendering
+
+Reader Markdown rendering could produce broken image links or malformed HTML when:
+
+- CRLF line endings were present in the source Markdown.
+- Image links used multi-line wrapper syntax (`[![alt](img-url)](link-url)` split across lines).
+- Code blocks were processed a second time by inline rules.
+
+Fixes in `frontend/src/utils/readerMarkdown.ts`:
+
+- Normalize CRLF to LF before processing.
+- Add a phase 0.5 pass to reassemble multi-line image link wrappers into a single line.
+- Skip inline processing for content already inside `<pre>` blocks.
+
+Tests added in `tests/readerMarkdown.test.ts` cover basic formatting, CRLF normalization, image links with different line breaks, title attributes, inline image links, and code block non-conversion.
+
+### Cleaned Content Markdown Generation
+
+When cleaning pages such as `https://expression.fire.org/p/the-papers-please-era-of-the-internet`, Turndown produced broken Markdown for two HTML patterns:
+
+1. **Image-only links** (`<a>` wrapping `<div><picture><img>`) produced empty lines and broken link syntax.
+   - Fixed by adding a custom `imageLink` rule in `src/contentService.ts` that outputs single-line `[![alt](img-url)](link-url)`.
+2. **Block-level links** (`<a>` directly wrapping `<p>`, `<div>`, or `<h1>`-`<h6>`) produced extra newlines.
+   - Fixed by adding a custom Turndown rule that converts them to clean Markdown such as `[Essays](url)` or `## [Title](url)`.
+
+Tests added in `tests/content-teamB.test.ts` verify both fixes.
+
+### Substack Digest Post Embed Formatting
+
+Cleaned Substack related-article cards (`<div data-component-name="DigestPostEmbed">`) originally:
+
+- Showed a leading dot separator (`<p>·</p>`) before the date.
+- Hyperlinked the article title.
+
+Fixes in `src/contentService.ts` (`normalizeDigestEmbeds`):
+
+- Remove the leading dot separator paragraph.
+- Replace the linked title with a plain heading.
+- Append a `Read full story →` link at the bottom of the card.
+- Wrap the entire card with `---` horizontal rules to separate it from surrounding content.
+
+Tests added in `tests/content-teamB.test.ts` verify the date formatting and link structure.
+
+### In-App Browser New-Window Popups
+
+Clicking certain links inside the embedded `<webview>` opened new Electron windows instead of navigating within the existing in-app browser.
+
+Initial fix:
+
+- Add `event.preventDefault()` in `handleEmbeddedBrowserNewWindow` in `frontend/src/components/EntryDetailPane.vue`.
+- Add a main-process `web-contents-created` listener in `src/electronMain.ts` that uses `setWindowOpenHandler` to deny webview popups and forward the URL to the renderer via `webview:new-window`.
+- Expose `onWebviewNewWindow` in `electron/preload.cjs`.
+- Add the renderer listener in `frontend/src/components/EntryDetailPane.vue` to update `embeddedBrowserUrl`.
+- Update `frontend/src/types.ts` and `frontend/src/api/client.ts` with the new bridge method.
+
+Further hardening for edge cases (iframes, delayed `window.open`, etc.):
+
+- Remove the `allowpopups` attribute from the `<webview>` so it cannot create popup windows by default.
+- Apply `setWindowOpenHandler` to **all** webcontents in the app, not only webviews; non-webview requests are denied outright.
