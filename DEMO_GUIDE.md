@@ -4,7 +4,7 @@
 
 ### 0.1 下载安装
 
-下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.5-arm64.dmg`。
+下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.6-arm64.dmg`。
 
 双击 dmg → 拖入 Applications → 首次启动需右键 → 打开（Gatekeeper）。
 
@@ -110,8 +110,10 @@
 
 ### Step 10 — 数据 + AI 用量（30s，可选）
 
-- 文件位置：`~/Library/Application Support/Vibe Reader/mercury-vibecoding.db`
-- 顶部状态栏可见 Token 用量统计
+- 数据库文件位置：`~/Library/Application Support/Vibe Reader/mercury-vibecoding.db`
+- Token 用量统计：点 AI 工具栏**齿轮图标 ⚙️** → 打开 Provider 面板 → 底部「用量统计」区
+  - 显示 totalCalls / prompt tokens / completion tokens / 总 tokens
+  - 右上角刷新按钮可重查
 
 ---
 

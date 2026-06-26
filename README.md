@@ -8,7 +8,7 @@
 
 项目定位：一个本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签功能的 RSS 阅读器。
 
-> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.5**）。仓库保留原项目代号。
+> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.6**）。仓库保留原项目代号。
 
 ## 下载安装
 

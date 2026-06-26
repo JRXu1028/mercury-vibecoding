@@ -268,11 +268,16 @@ npm run dist
 
 ### 6.3 已发布版本
 
-| 版本 | 平台 | 应用名 | 下载链接 |
-|------|------|--------|----------|
-| v0.1.0 | macOS arm64 | Mercury Vibecoding | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
-| v0.2.0 | macOS arm64 | Vibe Reader | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.0) |
-| v0.2.1 | macOS arm64 | Vibe Reader (含应用图标) | [GitHub Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.1) |
+| 版本 | 平台 | 应用名 | 说明 | 下载链接 |
+|------|------|--------|------|----------|
+| v0.1.0 | macOS arm64 | Mercury Vibecoding | 初始版本 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.1.0) |
+| v0.2.0 | macOS arm64 | Vibe Reader | 应用更名 + Team B/C 集成 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.0) |
+| v0.2.1 | macOS arm64 | Vibe Reader | 自定义应用图标 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.1) |
+| v0.2.2 | Mac/Win/Linux | Vibe Reader | CI 首次跑通（修复 GH_TOKEN 自动发布冲突） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.2) |
+| v0.2.3 | Mac/Win/Linux | Vibe Reader | CI 补 `dist:linux` 脚本 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.3) |
+| v0.2.4 | Mac/Win/Linux | Vibe Reader | CI 补 author/email/description（deb 依赖） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.4) |
+| v0.2.5 | Mac/Win/Linux | Vibe Reader | 折叠面板文本适配 + Header 精简（Team A/B/C） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.5) |
+| v0.2.6 | Mac/Win/Linux | Vibe Reader | 作者元数据对齐 + 文档定稿 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.6) |
 
 ### 6.4 用户安装说明
 
@@ -292,8 +297,8 @@ export DEEPSEEK_API_KEY=your-key
 
 ### 6.5 已知打包限制
 
-- 当前仅打包了 macOS arm64 版本；Windows/Linux 需在对应平台执行 `npm run dist`
-- 未配置代码签名和公证 (notarization)，macOS 需手动绕过 Gatekeeper
+- ~~当前仅打包了 macOS arm64 版本；Windows/Linux 需在对应平台执行 `npm run dist`~~ → v0.2.4 起 CI 已覆盖三平台
+- 未配置代码签名和公证 (notarization)，macOS 需手动绕过 Gatekeeper，Windows 需点击"仍要运行"
 - ~~应用图标使用 Electron 默认图标，尚未配置自定义图标~~ → v0.2.1 起使用自定义图标（`build/icon.png`，1024×1024）
 
 ## 7. 待办 (按优先级)
