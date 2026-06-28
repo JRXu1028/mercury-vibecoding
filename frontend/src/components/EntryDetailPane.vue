@@ -1,6 +1,27 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { ArrowDown, ChatLineRound, Close, DArrowLeft, DArrowRight, MagicStick, MoreFilled, Refresh, RefreshRight, Setting, Upload } from '@element-plus/icons-vue'
+import {
+  ArrowDown,
+  Brush,
+  ChatLineRound,
+  Clock,
+  Close,
+  Collection,
+  DArrowLeft,
+  DArrowRight,
+  Link,
+  MagicStick,
+  Memo,
+  Moon,
+  MoreFilled,
+  Reading,
+  Refresh,
+  RefreshRight,
+  Setting,
+  Sunny,
+  Upload,
+  User
+} from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { teamBApi, teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
@@ -724,7 +745,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       <header class="detail-header">
         <h1>{{ entry.title }}</h1>
         <div class="detail-actions">
-          <el-button link type="primary" @click="chooseOpenLink(entry.url)">打开原文</el-button>
+          <el-button link type="primary" :icon="Link" @click="chooseOpenLink(entry.url)">打开原文</el-button>
           <el-dropdown trigger="click" @command="handleArticleCommand">
             <el-button :icon="MoreFilled" circle size="small" title="更多文章操作" />
             <template #dropdown>
@@ -738,10 +759,10 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       </header>
 
       <div class="detail-meta">
-        <span>{{ props.feedTitle || 'Unknown feed' }}</span>
-        <span>{{ entry.author || 'Unknown author' }}</span>
-        <span>{{ formatTime(entry.publishedAt || entry.createdAt) }}</span>
-        <span v-if="content">已清洗</span>
+        <span><el-icon><Collection /></el-icon>{{ props.feedTitle || 'Unknown feed' }}</span>
+        <span><el-icon><User /></el-icon>{{ entry.author || 'Unknown author' }}</span>
+        <span><el-icon><Clock /></el-icon>{{ formatTime(entry.publishedAt || entry.createdAt) }}</span>
+        <span v-if="content"><el-icon><Brush /></el-icon>已清洗</span>
       </div>
 
       <EntryTags :entry-id="entry.id" />
@@ -751,14 +772,35 @@ teamBApi.onWebviewNewWindow(({ url }) => {
           v-model="activeView"
           :options="viewModeOptions"
         />
-        <el-segmented
-          v-model="readerTheme"
-          :options="[
-            { label: '浅色', value: 'light' },
-            { label: '护眼', value: 'sepia' },
-            { label: '深色', value: 'dark' }
-          ]"
-        />
+        <div class="theme-icon-group" aria-label="Reader theme">
+          <button
+            type="button"
+            class="theme-icon-button"
+            :class="{ selected: readerTheme === 'light' }"
+            title="浅色"
+            @click="readerTheme = 'light'"
+          >
+            <el-icon><Sunny /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="theme-icon-button"
+            :class="{ selected: readerTheme === 'sepia' }"
+            title="护眼"
+            @click="readerTheme = 'sepia'"
+          >
+            <el-icon><Reading /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="theme-icon-button"
+            :class="{ selected: readerTheme === 'dark' }"
+            title="深色"
+            @click="readerTheme = 'dark'"
+          >
+            <el-icon><Moon /></el-icon>
+          </button>
+        </div>
         <el-select v-model="readerTemplate" size="small" class="reader-template-select">
           <el-option value="classic" label="Classic" />
           <el-option value="editorial" label="Editorial" />
@@ -930,6 +972,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       </section>
 
       <button class="notes-fab" type="button" @click="notesDrawerVisible = true">
+        <el-icon><Memo /></el-icon>
         笔记<span v-if="noteCount > 0">{{ noteCount }}</span>
       </button>
     </template>
