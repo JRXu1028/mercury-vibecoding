@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DArrowLeft, DArrowRight, Delete, Download, MoreFilled, Plus, Refresh, Upload } from '@element-plus/icons-vue'
+import { Collection, DArrowLeft, DArrowRight, Delete, Download, MoreFilled, Plus, Refresh, Timer, Upload } from '@element-plus/icons-vue'
 import type { FeedItem } from '../types'
 
 const props = defineProps<{
@@ -45,7 +45,7 @@ function handleLibraryCommand(command: string): void {
       <header class="pane-header">
         <div class="pane-title-group">
           <span class="pane-eyebrow">Library</span>
-          <h2>Feeds</h2>
+          <h2><el-icon><Collection /></el-icon> Feeds</h2>
         </div>
         <div class="toolbar-actions">
           <el-button :icon="Plus" circle size="small" @click="emit('add')" />
@@ -65,7 +65,8 @@ function handleLibraryCommand(command: string): void {
 
       <div class="menu-actions">
         <el-button text class="all-feeds-button" :class="{ selected: props.selectedFeedId === null }" @click="emit('select', null)">
-          All Feeds
+          <el-icon><Collection /></el-icon>
+          <span>All Feeds</span>
         </el-button>
       </div>
 
@@ -96,9 +97,9 @@ function handleLibraryCommand(command: string): void {
       <div class="auto-sync-settings">
         <el-switch
           :model-value="props.autoSyncEnabled"
-          active-text="Auto Sync"
           @update:model-value="emit('updateAutoSyncEnabled', $event)"
         />
+        <span class="auto-sync-label"><el-icon><Timer /></el-icon> Auto Sync</span>
         <el-select
           :model-value="props.autoSyncIntervalMinutes"
           :disabled="!props.autoSyncEnabled"
@@ -158,7 +159,7 @@ function handleLibraryCommand(command: string): void {
 .auto-sync-settings {
   margin-top: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 84px;
+  grid-template-columns: auto minmax(0, 1fr) 84px;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
@@ -168,6 +169,15 @@ function handleLibraryCommand(command: string): void {
 
 .auto-sync-settings :deep(.el-switch__label) {
   color: var(--muted);
+  font-weight: 650;
+}
+
+.auto-sync-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
   font-weight: 650;
 }
 

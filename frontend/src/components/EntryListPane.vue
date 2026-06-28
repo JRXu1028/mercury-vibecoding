@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DArrowLeft, DArrowRight, RefreshRight } from '@element-plus/icons-vue'
+import { Clock, DArrowLeft, DArrowRight, Document, RefreshRight, User } from '@element-plus/icons-vue'
 import type { EntryItem, FeedItem } from '../types'
 
 const props = defineProps<{
@@ -64,7 +64,7 @@ function formatTime(value: string | null): string {
       <header class="pane-header">
         <div class="pane-title-group">
           <span class="pane-eyebrow">Reading Queue</span>
-          <h2>Entries</h2>
+          <h2><el-icon><Document /></el-icon> Entries</h2>
         </div>
         <div class="toolbar-actions">
           <el-button :icon="RefreshRight" text @click="emit('syncCurrent')">Sync</el-button>
@@ -91,9 +91,15 @@ function formatTime(value: string | null): string {
         >
           <p class="entry-title">{{ entry.title }}</p>
           <p class="entry-meta">
-            <span v-if="props.selectedFeedId === null" class="entry-source">{{ feedTitle(entry.feedId) }}</span>
-            <span v-if="entry.author" class="entry-author">{{ entry.author }}</span>
-            <span class="entry-time">{{ formatTime(entry.publishedAt || entry.createdAt) }}</span>
+            <span v-if="props.selectedFeedId === null" class="entry-source">
+              <el-icon><Document /></el-icon>{{ feedTitle(entry.feedId) }}
+            </span>
+            <span v-if="entry.author" class="entry-author">
+              <el-icon><User /></el-icon>{{ entry.author }}
+            </span>
+            <span class="entry-time">
+              <el-icon><Clock /></el-icon>{{ formatTime(entry.publishedAt || entry.createdAt) }}
+            </span>
           </p>
         </div>
         <el-empty v-if="!props.loading && props.entries.length === 0" description="No entries" :image-size="72" />
