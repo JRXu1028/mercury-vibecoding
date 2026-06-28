@@ -15,9 +15,17 @@ const sidebarCollapsed = ref(false)
 const listCollapsed = ref(false)
 
 const gridColumns = computed(() => {
-  const sidebarWidth = sidebarCollapsed.value ? 44 : 280
-  const listWidth = listCollapsed.value ? 44 : 360
+  const sidebarWidth = sidebarCollapsed.value ? 46 : 260
+  const listWidth = listCollapsed.value ? 46 : 390
   return `${sidebarWidth}px ${listWidth}px 1fr`
+})
+
+const selectedEntryFeedTitle = computed(() => {
+  const entry = store.selectedEntry
+  if (!entry) {
+    return null
+  }
+  return store.feeds.find((feed) => feed.id === entry.feedId)?.title ?? null
 })
 
 const addFeedDialogVisible = ref(false)
@@ -241,7 +249,7 @@ onBeforeUnmount(() => {
         @toggle-collapse="listCollapsed = !listCollapsed"
       />
 
-      <EntryDetailPane :entry="store.selectedEntry" />
+      <EntryDetailPane :entry="store.selectedEntry" :feed-title="selectedEntryFeedTitle" />
     </main>
 
     <el-dialog v-model="addFeedDialogVisible" title="Add Feed" width="460">
