@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { ChatLineRound, Close, DArrowLeft, DArrowRight, MagicStick, Refresh, RefreshRight, Setting, Upload } from '@element-plus/icons-vue'
+import { ArrowDown, ChatLineRound, Close, DArrowLeft, DArrowRight, MagicStick, MoreFilled, Refresh, RefreshRight, Setting, Upload } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { teamBApi, teamCApi } from '../api/client'
 import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
@@ -14,6 +14,7 @@ import EntryNotes from './EntryNotes.vue'
 
 const props = defineProps<{
   entry: EntryItem | null
+  feedTitle: string | null
 }>()
 
 const content = ref<EntryContent | null>(null)
@@ -31,6 +32,8 @@ const summaryResult = ref<SummaryResult | null>(null)
 const translationResult = ref<TranslationResult | null>(null)
 const aiProviderId = ref('mock')
 const providerPanelVisible = ref(false)
+const notesDrawerVisible = ref(false)
+const noteCount = ref(0)
 const availableProviders = ref<Array<{ providerId: string; name: string; available: boolean }>>([])
 const embeddedBrowserVisible = ref(false)
 const embeddedBrowserUrl = ref('')
@@ -86,7 +89,15 @@ function formatTime(value: string | null): string {
     return 'Unknown date'
   }
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? 'Unknown date' : date.toLocaleString()
+  return Number.isNaN(date.getTime())
+    ? 'Unknown date'
+    : date.toLocaleString([], {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
 }
 
 const readerStyle = computed(() => ({
@@ -121,27 +132,16 @@ const isAiActionDisabled = computed(() => isLoading.value || !hasCleanedMarkdown
 
 const viewModeOptions = computed(() => {
   const options: Array<{ label: string; value: string }> = [
-    { label: 'Reader', value: 'reader' },
+    { label: '阅读', value: 'reader' },
     { label: 'Markdown', value: 'markdown' }
   ]
   if (summaryResult.value) {
-    options.push({ label: 'Summary', value: 'summary' })
+    options.push({ label: '摘要', value: 'summary' })
   }
   if (translationResult.value) {
-    options.push({ label: 'Translation', value: 'translation' })
+    options.push({ label: '翻译', value: 'translation' })
   }
   return options
-})
-
-const aiProviderOptions = computed(() => {
-  if (availableProviders.value.length === 0) {
-    return [{ label: 'Mock', value: 'mock' }]
-  }
-  return availableProviders.value
-    .map((p) => ({
-      label: p.available ? p.name : `${p.name} (未配置)`,
-      value: p.providerId
-    }))
 })
 
 async function loadContent(forceRefresh = false): Promise<void> {
@@ -456,6 +456,25 @@ async function loadLatestAiResults(): Promise<void> {
   }
 }
 
+async function loadNoteCount(): Promise<void> {
+  if (!props.entry) {
+    noteCount.value = 0
+    return
+  }
+
+  const entryId = props.entry.id
+  try {
+    const notes = await teamBApi.listNotes(entryId)
+    if (props.entry?.id === entryId) {
+      noteCount.value = notes.length
+    }
+  } catch {
+    if (props.entry?.id === entryId) {
+      noteCount.value = 0
+    }
+  }
+}
+
 function handleSummaryClick(): void {
   const action = resolveAiAction(Boolean(summaryResult.value), 'summary')
   if (action === 'show-summary') {
@@ -472,6 +491,31 @@ function handleTranslationClick(): void {
     return
   }
   void translateEntry()
+}
+
+function handleArticleCommand(command: string): void {
+  if (!props.entry) {
+    return
+  }
+  if (command === 'refresh') {
+    void loadContent(true)
+  } else if (command === 'provider') {
+    providerPanelVisible.value = true
+  }
+}
+
+function handleAiCommand(command: string): void {
+  if (command === 'summary') {
+    handleSummaryClick()
+  } else if (command === 'translation') {
+    handleTranslationClick()
+  } else if (command === 'provider') {
+    providerPanelVisible.value = true
+  }
+}
+
+function updateNoteCount(value: number): void {
+  noteCount.value = value
 }
 
 async function summarizeEntry(): Promise<void> {
@@ -658,6 +702,7 @@ watch(
     void loadContent(false)
     void loadProviders()
     void loadLatestAiResults()
+    void loadNoteCount()
   },
   { immediate: true }
 )
@@ -679,21 +724,24 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       <header class="detail-header">
         <h1>{{ entry.title }}</h1>
         <div class="detail-actions">
-          <el-button
-            circle
-            :icon="Refresh"
-            :loading="isLoading"
-            title="Refresh cleaned content"
-            @click="loadContent(true)"
-          />
-          <el-button link type="primary" @click="chooseOpenLink(entry.url)">Open Source</el-button>
+          <el-button link type="primary" @click="chooseOpenLink(entry.url)">打开原文</el-button>
+          <el-dropdown trigger="click" @command="handleArticleCommand">
+            <el-button :icon="MoreFilled" circle size="small" title="更多文章操作" />
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="refresh" :icon="Refresh">重新清洗正文</el-dropdown-item>
+                <el-dropdown-item command="provider" :icon="Setting">AI Provider 设置</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </header>
 
       <div class="detail-meta">
+        <span>{{ props.feedTitle || 'Unknown feed' }}</span>
         <span>{{ entry.author || 'Unknown author' }}</span>
         <span>{{ formatTime(entry.publishedAt || entry.createdAt) }}</span>
-        <span v-if="content">Cleaned {{ formatTime(content.fetchedAt) }}</span>
+        <span v-if="content">已清洗</span>
       </div>
 
       <EntryTags :entry-id="entry.id" />
@@ -706,54 +754,36 @@ teamBApi.onWebviewNewWindow(({ url }) => {
         <el-segmented
           v-model="readerTheme"
           :options="[
-            { label: 'Light', value: 'light' },
-            { label: 'Sepia', value: 'sepia' },
-            { label: 'Dark', value: 'dark' }
+            { label: '浅色', value: 'light' },
+            { label: '护眼', value: 'sepia' },
+            { label: '深色', value: 'dark' }
           ]"
         />
-        <el-select v-model="readerTemplate" size="small" style="width: 128px">
+        <el-select v-model="readerTemplate" size="small" class="reader-template-select">
           <el-option value="classic" label="Classic" />
           <el-option value="editorial" label="Editorial" />
           <el-option value="technical" label="Technical" />
         </el-select>
+        <span class="reader-control-label">字号</span>
         <el-input-number v-model="fontSize" :min="12" :max="18" size="small" controls-position="right" />
+        <span class="reader-control-label">行距</span>
         <el-input-number v-model="lineHeight" :min="1.4" :max="2.2" :step="0.1" size="small" controls-position="right" />
-      </div>
-
-      <div class="ai-toolbar">
-        <el-segmented
-          v-model="aiProviderId"
-          :options="aiProviderOptions"
-          size="small"
-          class="ai-provider-switch"
-        />
-        <el-button
-          type="primary"
-          plain
-          :icon="MagicStick"
-          :loading="isSummarizing"
-          :disabled="isTranslating || isAiActionDisabled"
-          @click="handleSummaryClick"
-        >
-          AI Summary
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :icon="ChatLineRound"
-          :loading="isTranslating"
-          :disabled="isSummarizing || isAiActionDisabled"
-          @click="handleTranslationClick"
-        >
-          AI Translation
-        </el-button>
-        <el-button
-          plain
-          :icon="Setting"
-          size="small"
-          title="AI Provider 设置"
-          @click="providerPanelVisible = true"
-        />
+        <el-dropdown trigger="click" @command="handleAiCommand">
+          <el-button class="ai-menu-button" plain size="small" :loading="isSummarizing || isTranslating">
+            AI <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="summary" :icon="MagicStick" :disabled="isTranslating || isAiActionDisabled">
+                生成/查看摘要
+              </el-dropdown-item>
+              <el-dropdown-item command="translation" :icon="ChatLineRound" :disabled="isSummarizing || isAiActionDisabled">
+                生成/查看翻译
+              </el-dropdown-item>
+              <el-dropdown-item divided command="provider" :icon="Setting">Provider 设置</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <span v-if="content && !hasCleanedMarkdown" class="ai-provider-hint">
           {{ aiContentMessage }}
         </span>
@@ -899,7 +929,9 @@ teamBApi.onWebviewNewWindow(({ url }) => {
         />
       </section>
 
-      <EntryNotes :entry-id="entry.id" />
+      <button class="notes-fab" type="button" @click="notesDrawerVisible = true">
+        笔记<span v-if="noteCount > 0">{{ noteCount }}</span>
+      </button>
     </template>
 
     <el-empty v-else description="Select an entry" :image-size="88" />
@@ -999,22 +1031,19 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   >
     <ProviderPanel />
   </el-dialog>
+
+  <el-drawer
+    v-model="notesDrawerVisible"
+    title="笔记"
+    direction="rtl"
+    size="380px"
+    :destroy-on-close="false"
+  >
+    <EntryNotes v-if="entry" :entry-id="entry.id" @count-change="updateNoteCount" />
+  </el-drawer>
 </template>
 
 <style scoped>
-.ai-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
-}
-
-.ai-provider-switch {
-  flex: 0 0 auto;
-}
-
 .ai-provider-hint {
   color: var(--muted);
   font-size: 12px;
@@ -1022,16 +1051,55 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   max-width: 420px;
 }
 
+.notes-fab {
+  position: absolute;
+  right: 28px;
+  bottom: 22px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(207, 196, 179, 0.86);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  background: rgba(255, 253, 250, 0.88);
+  box-shadow: 0 10px 24px rgba(75, 60, 39, 0.1);
+}
+
+.notes-fab:hover {
+  color: var(--brand-strong);
+  border-color: rgba(163, 90, 22, 0.36);
+  background: var(--brand-soft);
+}
+
+.notes-fab span {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--brand);
+}
+
 .ai-error-area {
   border-top: 1px solid var(--line);
-  padding: 10px 16px;
+  padding: 12px 24px;
+  background: rgba(255, 253, 250, 0.62);
 }
 
 .embedded-browser-shell {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(15, 23, 42, 0.38);
+  background: rgba(37, 35, 31, 0.5);
+  backdrop-filter: blur(10px);
 }
 
 .embedded-browser-surface {
@@ -1041,10 +1109,10 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+  border: 1px solid rgba(222, 214, 200, 0.82);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 26px 70px rgba(37, 35, 31, 0.28);
 }
 
 .embedded-browser-toolbar {
@@ -1054,10 +1122,10 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   grid-template-columns: 36px 36px 36px minmax(180px, 1fr) 36px 36px;
   align-items: center;
   gap: 10px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--line);
-  border-radius: 8px 8px 0 0;
-  background: #ffffff;
+  border-radius: 18px 18px 0 0;
+  background: #fffdfa;
 }
 
 .embedded-browser-toolbar :deep(.el-button.is-circle) {
@@ -1097,7 +1165,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--reader-bg);
 }
 
 .embedded-browser-view {
@@ -1184,10 +1252,11 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 .summary-inline-card {
   max-width: 780px;
   margin: 0 auto 18px;
-  padding: 14px 20px;
-  border-radius: 8px;
-  border: 1px solid #d4e2f5;
-  background: linear-gradient(135deg, #f0f6ff, #f7faff);
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(207, 196, 179, 0.76);
+  background: #fff8ef;
+  box-shadow: 0 10px 24px rgba(75, 60, 39, 0.06);
 }
 
 .summary-inline-header {
@@ -1220,8 +1289,8 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 
 /* Dark / sepia overrides */
 .summary-inline-card.reader-dark {
-  background: linear-gradient(135deg, #1a2535, #1e2a3a);
-  border-color: #2d4055;
+  background: #29221c;
+  border-color: rgba(255, 248, 239, 0.1);
 }
 
 .summary-inline-card.reader-dark .summary-inline-text {
@@ -1229,7 +1298,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 }
 
 .summary-inline-card.reader-sepia {
-  background: linear-gradient(135deg, #f5ecd7, #f8f0dd);
+  background: #f5ecd7;
   border-color: #d8cca8;
 }
 
@@ -1241,7 +1310,11 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 .summary-dedicated-view {
   max-width: 780px;
   margin: 0 auto;
-  padding: 22px 26px 36px;
+  padding: 30px 34px 42px;
+  border: 1px solid rgba(222, 214, 200, 0.76);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: var(--shadow-paper);
 }
 
 .summary-dedicated-header {
@@ -1286,7 +1359,11 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 .translation-view {
   max-width: 820px;
   margin: 0 auto;
-  padding: 18px 26px 36px;
+  padding: 30px 34px 42px;
+  border: 1px solid rgba(222, 214, 200, 0.76);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: var(--shadow-paper);
 }
 
 .translation-header {
@@ -1325,9 +1402,9 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   color: var(--muted);
   line-height: 1.6;
   margin-bottom: 8px;
-  padding: 8px 12px;
-  background: rgba(128, 128, 128, 0.06);
-  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(117, 111, 102, 0.08);
+  border-radius: 12px;
   border-left: 3px solid #d0d5dd;
 }
 
@@ -1477,6 +1554,12 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   color: #e6edf3;
 }
 
+.summary-dedicated-view.reader-dark,
+.translation-view.reader-dark {
+  background: #151a1f;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .reader-sepia .trans-seg-source {
   background: rgba(180, 160, 120, 0.12);
   border-left-color: #c4b89c;
@@ -1484,5 +1567,10 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 
 .reader-sepia .trans-seg-target {
   color: #2f2a24;
+}
+
+.summary-dedicated-view.reader-sepia,
+.translation-view.reader-sepia {
+  background: #fbf3df;
 }
 </style>

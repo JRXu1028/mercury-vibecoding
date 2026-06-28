@@ -1,6 +1,7 @@
 declare module '@element-plus/icons-vue' {
   import type { Component } from 'vue'
 
+  export const ArrowDown: Component
   export const ChatLineRound: Component
   export const Close: Component
   export const DArrowLeft: Component
@@ -9,6 +10,7 @@ declare module '@element-plus/icons-vue' {
   export const Edit: Component
   export const Download: Component
   export const MagicStick: Component
+  export const MoreFilled: Component
   export const Plus: Component
   export const Refresh: Component
   export const RefreshRight: Component

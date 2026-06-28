@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DArrowLeft, DArrowRight, Delete, Plus, Refresh, Upload, Download } from '@element-plus/icons-vue'
+import { DArrowLeft, DArrowRight, Delete, Download, MoreFilled, Plus, Refresh, Upload } from '@element-plus/icons-vue'
 import type { FeedItem } from '../types'
 
 const props = defineProps<{
@@ -22,6 +22,14 @@ const emit = defineEmits<{
   updateAutoSyncEnabled: [value: boolean]
   updateAutoSyncInterval: [value: number]
 }>()
+
+function handleLibraryCommand(command: string): void {
+  if (command === 'import') {
+    emit('importOpml')
+  } else if (command === 'export') {
+    emit('exportOpml')
+  }
+}
 </script>
 
 <template>
@@ -35,19 +43,55 @@ const emit = defineEmits<{
 
     <template v-else>
       <header class="pane-header">
-        <h2>Feeds</h2>
+        <div class="pane-title-group">
+          <span class="pane-eyebrow">Library</span>
+          <h2>Feeds</h2>
+        </div>
         <div class="toolbar-actions">
           <el-button :icon="Plus" circle size="small" @click="emit('add')" />
           <el-button :icon="Refresh" circle size="small" @click="emit('syncAll')" />
+          <el-dropdown trigger="click" @command="handleLibraryCommand">
+            <el-button :icon="MoreFilled" circle size="small" title="更多订阅源操作" />
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="import" :icon="Upload">Import OPML</el-dropdown-item>
+                <el-dropdown-item command="export" :icon="Download">Export OPML</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-button :icon="DArrowLeft" circle size="small" title="收起侧栏" @click="emit('toggleCollapse')" />
         </div>
       </header>
 
       <div class="menu-actions">
-        <el-button text :icon="Upload" @click="emit('importOpml')">Import OPML</el-button>
-        <el-button text :icon="Download" @click="emit('exportOpml')">Export OPML</el-button>
-        <el-button text @click="emit('select', null)">All Feeds</el-button>
+        <el-button text class="all-feeds-button" :class="{ selected: props.selectedFeedId === null }" @click="emit('select', null)">
+          All Feeds
+        </el-button>
       </div>
+
+      <el-scrollbar class="feed-list">
+        <div
+          v-for="feed in props.feeds"
+          :key="feed.id"
+          class="feed-item"
+          :class="{ selected: props.selectedFeedId === feed.id }"
+          @click="emit('select', feed.id)"
+        >
+          <span class="feed-accent" aria-hidden="true">{{ feed.title.slice(0, 1).toUpperCase() }}</span>
+          <div class="feed-main">
+            <p class="feed-title">{{ feed.title }}</p>
+          </div>
+          <span class="feed-count">{{ feed.entryCount }}</span>
+          <el-button
+            class="feed-delete-button"
+            :icon="Delete"
+            link
+            type="danger"
+            @click.stop="emit('remove', feed)"
+          />
+        </div>
+        <el-empty v-if="!props.loading && props.feeds.length === 0" description="No feeds" :image-size="72" />
+      </el-scrollbar>
 
       <div class="auto-sync-settings">
         <el-switch
@@ -67,36 +111,14 @@ const emit = defineEmits<{
           <el-option :value="30" label="30 min" />
         </el-select>
       </div>
-
-      <el-scrollbar class="feed-list">
-        <div
-          v-for="feed in props.feeds"
-          :key="feed.id"
-          class="feed-item"
-          :class="{ selected: props.selectedFeedId === feed.id }"
-          @click="emit('select', feed.id)"
-        >
-          <div class="feed-main">
-            <p class="feed-title">{{ feed.title }}</p>
-            <p class="feed-meta">{{ feed.entryCount }} entries</p>
-          </div>
-          <el-button
-            :icon="Delete"
-            link
-            type="danger"
-            @click.stop="emit('remove', feed)"
-          />
-        </div>
-        <el-empty v-if="!props.loading && props.feeds.length === 0" description="No feeds" :image-size="72" />
-      </el-scrollbar>
     </template>
   </section>
 </template>
 
 <style scoped>
 .sidebar-pane.collapsed {
-  width: 44px;
-  min-width: 44px;
+  width: 46px;
+  min-width: 46px;
   flex: none;
 }
 
@@ -105,19 +127,21 @@ const emit = defineEmits<{
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 14px 0;
+  padding: 16px 0;
   cursor: pointer;
   height: 100%;
   width: 100%;
   min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  transition: color 0.15s;
+  border-radius: 0;
+  background: transparent;
+  transition: color 0.15s, background 0.15s;
 }
 
 .collapsed-strip:hover {
   color: var(--brand);
-  background: #f0f6ff;
+  background: rgba(244, 229, 210, 0.74);
 }
 
 .collapsed-label {
@@ -132,11 +156,22 @@ const emit = defineEmits<{
 }
 
 .auto-sync-settings {
+  margin-top: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 84px;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 253, 250, 0.32);
+}
+
+.auto-sync-settings :deep(.el-switch__label) {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.auto-sync-settings :deep(.el-select__wrapper) {
+  min-height: 32px;
 }
 </style>

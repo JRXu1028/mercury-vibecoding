@@ -5,6 +5,9 @@ import { teamBApi } from '../api/client'
 import type { NoteItem } from '../types'
 
 const props = defineProps<{ entryId: number }>()
+const emit = defineEmits<{
+  countChange: [count: number]
+}>()
 
 const notes = ref<NoteItem[]>([])
 const isLoading = ref(false)
@@ -19,6 +22,7 @@ async function loadNotes(): Promise<void> {
   isLoading.value = true
   try {
     notes.value = await teamBApi.listNotes(props.entryId)
+    emit('countChange', notes.value.length)
   } finally {
     isLoading.value = false
   }
@@ -135,8 +139,9 @@ watch(() => props.entryId, () => {
 
 <style scoped>
 .entry-notes {
-  border-top: 1px solid var(--el-border-color-lighter, #ebeef5);
-  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  padding: 14px 24px 18px;
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .notes-header {
@@ -148,11 +153,12 @@ watch(() => props.entryId, () => {
 
 .notes-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 720;
+  letter-spacing: -0.01em;
 }
 
 .notes-empty {
-  color: var(--el-text-color-secondary, #909399);
+  color: var(--muted);
   font-size: 13px;
   padding: 8px 0;
 }
@@ -164,9 +170,11 @@ watch(() => props.entryId, () => {
 }
 
 .note-card {
-  background: var(--el-fill-color-lighter, #f5f7fa);
-  border-radius: 6px;
-  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 20px rgba(31, 42, 55, 0.06);
 }
 
 .note-head {
@@ -178,12 +186,12 @@ watch(() => props.entryId, () => {
 
 .note-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 680;
 }
 
 .note-time {
   font-size: 11px;
-  color: var(--el-text-color-secondary, #909399);
+  color: var(--muted);
 }
 
 .note-content {

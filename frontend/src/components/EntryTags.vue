@@ -134,16 +134,20 @@ watch(() => props.entryId, () => {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  padding: 6px 0;
+  padding: 0 30px 6px;
 }
 
 .tags-label {
   font-size: 12px;
-  color: var(--el-text-color-secondary, #909399);
+  color: var(--muted);
+  font-weight: 650;
 }
 
 .tag-chip {
   cursor: default;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
 }
 
 .tag-chip.clickable {
@@ -156,7 +160,7 @@ watch(() => props.entryId, () => {
 
 .section-label {
   font-size: 13px;
-  color: var(--el-text-color-secondary, #909399);
+  color: var(--muted);
   margin: 0 0 8px;
 }
 
@@ -167,7 +171,7 @@ watch(() => props.entryId, () => {
 }
 
 .new-tag-section {
-  border-top: 1px solid var(--el-border-color-lighter, #ebeef5);
+  border-top: 1px solid var(--line);
   padding-top: 12px;
 }
 
