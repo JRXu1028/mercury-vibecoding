@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Collection, DArrowLeft, DArrowRight, Delete, Download, MoreFilled, Plus, Refresh, Timer, Upload } from '@element-plus/icons-vue'
 import type { FeedItem } from '../types'
+import type { FeedSourceSelection } from '../stores/feed'
 
 const props = defineProps<{
   feeds: FeedItem[]
+  selectedSource: FeedSourceSelection
   selectedFeedId: number | null
   loading: boolean
   collapsed: boolean
@@ -12,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  select: [feedId: number | null]
+  select: [source: FeedSourceSelection]
   add: []
   syncAll: []
   importOpml: []
@@ -64,9 +66,13 @@ function handleLibraryCommand(command: string): void {
       </header>
 
       <div class="menu-actions">
-        <el-button text class="all-feeds-button" :class="{ selected: props.selectedFeedId === null }" @click="emit('select', null)">
+        <el-button text class="all-feeds-button" :class="{ selected: props.selectedSource === 'all' }" @click="emit('select', 'all')">
           <el-icon><Collection /></el-icon>
           <span>All Feeds</span>
+        </el-button>
+        <el-button text class="all-feeds-button" :class="{ selected: props.selectedSource === 'starred' }" @click="emit('select', 'starred')">
+          <span class="star-icon" aria-hidden="true">★</span>
+          <span>Starred</span>
         </el-button>
       </div>
 
@@ -142,7 +148,7 @@ function handleLibraryCommand(command: string): void {
 
 .collapsed-strip:hover {
   color: var(--brand);
-  background: rgba(244, 229, 210, 0.74);
+  background: rgba(248, 250, 252, 0.96);
 }
 
 .collapsed-label {
@@ -164,7 +170,7 @@ function handleLibraryCommand(command: string): void {
   gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid var(--line);
-  background: rgba(255, 253, 250, 0.32);
+  background: rgba(255, 255, 255, 0.46);
 }
 
 .auto-sync-settings :deep(.el-switch__label) {
@@ -183,5 +189,14 @@ function handleLibraryCommand(command: string): void {
 
 .auto-sync-settings :deep(.el-select__wrapper) {
   min-height: 32px;
+}
+
+.star-icon {
+  width: 1em;
+  display: inline-flex;
+  justify-content: center;
+  color: #60a5fa;
+  font-size: 14px;
+  line-height: 1;
 }
 </style>

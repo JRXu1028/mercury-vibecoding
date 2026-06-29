@@ -146,6 +146,18 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       return
     }
 
+    if (req.method === 'PATCH' && /^\/api\/entries\/\d+\/state$/.test(url.pathname)) {
+      const parts = url.pathname.split('/')
+      const entryId = Number(parts[3])
+      const body = await readJsonBody(req)
+      const entry = feedService.updateEntryState(entryId, {
+        isRead: typeof body.isRead === 'boolean' ? body.isRead : undefined,
+        isFavorite: typeof body.isFavorite === 'boolean' ? body.isFavorite : undefined
+      })
+      sendJson(res, 200, entry)
+      return
+    }
+
     // --- Notes ---
 
     if (req.method === 'GET' && url.pathname === '/api/notes') {

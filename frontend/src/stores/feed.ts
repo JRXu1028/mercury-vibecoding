@@ -3,12 +3,21 @@ import { computed, ref } from 'vue'
 import { teamAApi } from '../api/client'
 import type { EntryItem, FeedItem } from '../types'
 
+export type FeedSourceSelection = 'all' | 'starred' | number
+
 export const useFeedStore = defineStore('feed', () => {
   const feeds = ref<FeedItem[]>([])
   const entries = ref<EntryItem[]>([])
-  const selectedFeedId = ref<number | null>(null)
+  const selectedSource = ref<FeedSourceSelection>('all')
+  const selectedFeedId = computed<number | null>({
+    get: () => (typeof selectedSource.value === 'number' ? selectedSource.value : null),
+    set: (value) => {
+      selectedSource.value = value ?? 'all'
+    }
+  })
   const selectedEntryId = ref<number | null>(null)
   const searchText = ref('')
+  const unreadOnly = ref(false)
   const isLoadingFeeds = ref(false)
   const isLoadingEntries = ref(false)
 
@@ -19,7 +28,7 @@ export const useFeedStore = defineStore('feed', () => {
     try {
       feeds.value = await teamAApi.listFeeds()
       if (selectedFeedId.value !== null && !feeds.value.some((feed) => feed.id === selectedFeedId.value)) {
-        selectedFeedId.value = null
+        selectedSource.value = 'all'
       }
     } finally {
       isLoadingFeeds.value = false
@@ -29,10 +38,17 @@ export const useFeedStore = defineStore('feed', () => {
   async function refreshEntries(): Promise<void> {
     isLoadingEntries.value = true
     try {
-      entries.value = await teamAApi.listEntries({
+      const loadedEntries = await teamAApi.listEntries({
         feedId: selectedFeedId.value ?? undefined,
         q: searchText.value
       })
+      let filteredEntries = selectedSource.value === 'starred'
+        ? loadedEntries.filter((entry) => entry.isFavorite)
+        : loadedEntries
+      if (unreadOnly.value) {
+        filteredEntries = filteredEntries.filter((entry) => !entry.isRead)
+      }
+      entries.value = filteredEntries
       if (selectedEntryId.value !== null && !entries.value.some((entry) => entry.id === selectedEntryId.value)) {
         selectedEntryId.value = null
       }
@@ -53,7 +69,7 @@ export const useFeedStore = defineStore('feed', () => {
   async function removeFeed(feedId: number): Promise<void> {
     await teamAApi.removeFeed(feedId)
     if (selectedFeedId.value === feedId) {
-      selectedFeedId.value = null
+      selectedSource.value = 'all'
     }
     await refreshFeeds()
     await refreshEntries()
@@ -84,13 +100,30 @@ export const useFeedStore = defineStore('feed', () => {
     return await teamAApi.exportOpml()
   }
 
+  async function updateEntryState(entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }): Promise<void> {
+    const updated = await teamAApi.updateEntryState(entryId, fields)
+    const index = entries.value.findIndex((entry) => entry.id === entryId)
+    if (index >= 0) {
+      if (selectedSource.value === 'starred' && !updated.isFavorite) {
+        entries.value.splice(index, 1)
+        if (selectedEntryId.value === entryId) {
+          selectedEntryId.value = null
+        }
+        return
+      }
+      entries.value[index] = updated
+    }
+  }
+
   return {
     feeds,
     entries,
     selectedFeedId,
+    selectedSource,
     selectedEntryId,
     selectedEntry,
     searchText,
+    unreadOnly,
     isLoadingFeeds,
     isLoadingEntries,
     refreshFeeds,
@@ -100,6 +133,7 @@ export const useFeedStore = defineStore('feed', () => {
     syncFeed,
     syncAllFeeds,
     importOpml,
-    exportOpml
+    exportOpml,
+    updateEntryState
   }
 })

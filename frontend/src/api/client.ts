@@ -94,6 +94,17 @@ export const teamAApi = {
     return data.entries
   },
 
+  async updateEntryState(entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }): Promise<EntryItem> {
+    if (bridgeA) {
+      return await bridgeA.updateEntryState(entryId, fields)
+    }
+    return await request<EntryItem>(`/api/entries/${entryId}/state`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields)
+    })
+  },
+
   async importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }> {
     if (bridgeA) {
       return await bridgeA.importOpml(content)

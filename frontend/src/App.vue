@@ -162,6 +162,11 @@ function updateSearch(value: string): void {
   }, 250)
 }
 
+function toggleUnreadOnly(): void {
+  store.unreadOnly = !store.unreadOnly
+  void store.refreshEntries()
+}
+
 function resetAutoSyncTimer(): void {
   if (autoSyncTimer !== null) {
     window.clearInterval(autoSyncTimer)
@@ -183,6 +188,22 @@ function updateAutoSyncEnabled(value: boolean): void {
 function updateAutoSyncInterval(value: number): void {
   autoSyncIntervalMinutes.value = value
   resetAutoSyncTimer()
+}
+
+function selectEntry(entryId: number): void {
+  store.selectedEntryId = entryId
+  const entry = store.entries.find((item) => item.id === entryId)
+  if (entry && !entry.isRead) {
+    void updateEntryState(entryId, { isRead: true })
+  }
+}
+
+async function updateEntryState(entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }): Promise<void> {
+  try {
+    await store.updateEntryState(entryId, fields)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : String(error))
+  }
 }
 
 let removeLogListener: (() => void) | null = null
@@ -219,12 +240,13 @@ onBeforeUnmount(() => {
     <main class="main-layout" :style="{ gridTemplateColumns: gridColumns }">
       <FeedSidebar
         :feeds="store.feeds"
+        :selected-source="store.selectedSource"
         :selected-feed-id="store.selectedFeedId"
         :loading="store.isLoadingFeeds"
         :collapsed="sidebarCollapsed"
         :auto-sync-enabled="autoSyncEnabled"
         :auto-sync-interval-minutes="autoSyncIntervalMinutes"
-        @select="(id) => { store.selectedFeedId = id; store.refreshEntries() }"
+        @select="(source) => { store.selectedSource = source; store.refreshEntries() }"
         @add="addFeedDialogVisible = true"
         @sync-all="syncCurrent"
         @import-opml="importDialogVisible = true"
@@ -242,14 +264,21 @@ onBeforeUnmount(() => {
         :selected-entry-id="store.selectedEntryId"
         :loading="store.isLoadingEntries"
         :search-text="store.searchText"
+        :unread-only="store.unreadOnly"
         :collapsed="listCollapsed"
-        @select-entry="(entryId) => (store.selectedEntryId = entryId)"
+        @select-entry="selectEntry"
+        @update-entry-state="updateEntryState"
         @update-search="updateSearch"
+        @toggle-unread-only="toggleUnreadOnly"
         @sync-current="syncCurrent"
         @toggle-collapse="listCollapsed = !listCollapsed"
       />
 
-      <EntryDetailPane :entry="store.selectedEntry" :feed-title="selectedEntryFeedTitle" />
+      <EntryDetailPane
+        :entry="store.selectedEntry"
+        :feed-title="selectedEntryFeedTitle"
+        @update-entry-state="updateEntryState"
+      />
     </main>
 
     <el-dialog v-model="addFeedDialogVisible" title="Add Feed" width="460">

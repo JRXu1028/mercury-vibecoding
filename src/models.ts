@@ -17,6 +17,8 @@ export interface Entry {
   title: string
   author: string | null
   summary: string | null
+  isRead: boolean
+  isFavorite: boolean
   contentHtml: string | null
   contentMd: string | null
   contentFetchedAt: string | null

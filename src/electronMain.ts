@@ -292,6 +292,13 @@ function registerIpcHandlers(): void {
     })
   })
 
+  ipcMain.handle('entry:updateState', async (_event: IpcMainInvokeEvent, payload: { entryId: number; isRead?: boolean; isFavorite?: boolean }) => {
+    return feedService.updateEntryState(payload.entryId, {
+      isRead: payload.isRead,
+      isFavorite: payload.isFavorite
+    })
+  })
+
   ipcMain.handle('entry:content', async (_event: IpcMainInvokeEvent, payload: { entryId: number; forceRefresh?: boolean }) => {
     return await contentService.getEntryContent(payload.entryId, {
       forceRefresh: payload.forceRefresh

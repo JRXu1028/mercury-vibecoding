@@ -116,6 +116,39 @@ describe('Team A feed flow', () => {
     expect(entries.find((entry) => entry.guid === 'entry-1')?.title).toBe('Post 1 Updated')
   })
 
+  it('updates entry read and favorite state', async () => {
+    parseFeedMock.mockResolvedValue({
+      title: 'Example Feed',
+      feedUrl: 'https://example.com/feed.xml',
+      siteUrl: 'https://example.com',
+      description: 'Test feed',
+      entries: [
+        {
+          guid: 'entry-1',
+          url: 'https://example.com/posts/1',
+          title: 'Post 1',
+          author: null,
+          summary: null,
+          publishedAt: '2026-05-26T00:00:00.000Z'
+        }
+      ]
+    })
+
+    const added = await feedService.addFeed('https://example.com/feed.xml')
+    const entry = feedService.listEntries({ feedId: added.feed.id })[0]
+    expect(entry.isRead).toBe(false)
+    expect(entry.isFavorite).toBe(false)
+
+    const updated = feedService.updateEntryState(entry.id, {
+      isRead: true,
+      isFavorite: true
+    })
+
+    expect(updated.isRead).toBe(true)
+    expect(updated.isFavorite).toBe(true)
+    expect(feedService.listEntries({ feedId: added.feed.id })[0].isFavorite).toBe(true)
+  })
+
   it('imports and exports OPML', async () => {
     parseFeedMock.mockImplementation(async (url: string) => ({
       title: `Feed: ${url}`,

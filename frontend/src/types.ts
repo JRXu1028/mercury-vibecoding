@@ -18,6 +18,8 @@ export interface EntryItem {
   title: string
   author: string | null
   summary: string | null
+  isRead: boolean
+  isFavorite: boolean
   contentHtml: string | null
   contentMd: string | null
   contentFetchedAt: string | null
@@ -123,6 +125,7 @@ export interface TeamABridgeApi {
   syncFeed(feedId: number): Promise<SyncResponse>
   syncAllFeeds(): Promise<Array<{ feedId: number; newEntryCount: number }>>
   listEntries(params: { feedId?: number; q?: string }): Promise<EntryItem[]>
+  updateEntryState(entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }): Promise<EntryItem>
   importOpml(content: string): Promise<{ imported: number; failed: Array<{ url: string; reason: string }> }>
   exportOpml(): Promise<string>
   openOpmlFile(): Promise<{ filePath: string; content: string } | null>

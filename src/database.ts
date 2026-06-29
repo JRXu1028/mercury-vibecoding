@@ -49,6 +49,8 @@ export class AppDatabase {
         title TEXT NOT NULL,
         author TEXT,
         summary TEXT,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        is_favorite INTEGER NOT NULL DEFAULT 0,
         content_html TEXT,
         content_md TEXT,
         content_fetched_at TEXT,
@@ -152,6 +154,8 @@ export class AppDatabase {
     this.addColumnIfMissing('entries', 'content_html', 'TEXT')
     this.addColumnIfMissing('entries', 'content_md', 'TEXT')
     this.addColumnIfMissing('entries', 'content_fetched_at', 'TEXT')
+    this.addColumnIfMissing('entries', 'is_read', 'INTEGER NOT NULL DEFAULT 0')
+    this.addColumnIfMissing('entries', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0')
     this.addColumnIfMissing('tags', 'updated_at', 'TEXT')
     this.addColumnIfMissing('llm_providers', 'api_key_encrypted', 'BLOB')
   }

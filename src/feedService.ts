@@ -22,6 +22,8 @@ interface EntryRow {
   title: string
   author: string | null
   summary: string | null
+  is_read: number
+  is_favorite: number
   content_html: string | null
   content_md: string | null
   content_fetched_at: string | null
@@ -54,6 +56,8 @@ function toEntry(row: EntryRow): Entry {
     title: row.title,
     author: row.author,
     summary: row.summary,
+    isRead: Boolean(row.is_read),
+    isFavorite: Boolean(row.is_favorite),
     contentHtml: row.content_html,
     contentMd: row.content_md,
     contentFetchedAt: row.content_fetched_at,
@@ -112,13 +116,59 @@ export class FeedService {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const rows = this.db.prepare(`
-      SELECT id, feed_id, guid, url, title, author, summary, content_html, content_md, content_fetched_at, published_at, created_at, updated_at
+      SELECT id, feed_id, guid, url, title, author, summary, is_read, is_favorite, content_html, content_md, content_fetched_at, published_at, created_at, updated_at
       FROM entries
       ${where}
       ORDER BY COALESCE(published_at, created_at) DESC
     `).all(...params)
 
     return asEntryRows(rows).map(toEntry)
+  }
+
+  updateEntryState(entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }): Entry {
+    const sets: string[] = []
+    const params: Array<number | string> = []
+    const timestamp = nowIso()
+
+    if (fields.isRead !== undefined) {
+      sets.push('is_read = ?')
+      params.push(fields.isRead ? 1 : 0)
+    }
+    if (fields.isFavorite !== undefined) {
+      sets.push('is_favorite = ?')
+      params.push(fields.isFavorite ? 1 : 0)
+    }
+    if (sets.length === 0) {
+      const existing = this.getEntryById(entryId)
+      if (!existing) {
+        throw new Error(`Entry not found: ${entryId}`)
+      }
+      return existing
+    }
+
+    sets.push('updated_at = ?')
+    params.push(timestamp, entryId)
+
+    const result = this.db.prepare(`
+      UPDATE entries
+      SET ${sets.join(', ')}
+      WHERE id = ?
+    `).run(...params)
+
+    if (result.changes === 0) {
+      throw new Error(`Entry not found: ${entryId}`)
+    }
+
+    return this.getEntryById(entryId) as Entry
+  }
+
+  private getEntryById(entryId: number): Entry | undefined {
+    const row = this.db.prepare(`
+      SELECT id, feed_id, guid, url, title, author, summary, is_read, is_favorite, content_html, content_md, content_fetched_at, published_at, created_at, updated_at
+      FROM entries
+      WHERE id = ?
+    `).get(entryId) as EntryRow | undefined
+    return row ? toEntry(row) : undefined
   }
 
   async addFeed(feedUrl: string): Promise<{ feed: Feed; newEntryCount: number }> {

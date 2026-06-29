@@ -38,6 +38,10 @@ const props = defineProps<{
   feedTitle: string | null
 }>()
 
+const emit = defineEmits<{
+  updateEntryState: [entryId: number, fields: { isRead?: boolean; isFavorite?: boolean }]
+}>()
+
 const content = ref<EntryContent | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -55,7 +59,8 @@ const aiProviderId = ref('mock')
 const providerPanelVisible = ref(false)
 const notesDrawerVisible = ref(false)
 const noteCount = ref(0)
-const availableProviders = ref<Array<{ providerId: string; name: string; available: boolean }>>([])
+const availableProviders = ref<Array<{ providerId: string; name: string; available: boolean; defaultModel: string | null }>>([])
+const selectedAiModel = ref('')
 const embeddedBrowserVisible = ref(false)
 const embeddedBrowserUrl = ref('')
 const embeddedBrowserAddress = ref('')
@@ -104,6 +109,20 @@ let embeddedBrowserResizeState: {
   startY: number
   startRect: EmbeddedBrowserRect
 } | null = null
+
+const availableAiModels = computed(() => {
+  const provider = availableProviders.value.find((item) => item.providerId === aiProviderId.value)
+  return provider?.defaultModel ? [provider.defaultModel] : []
+})
+
+const selectedProviderLabel = computed(() => {
+  return availableProviders.value.find((item) => item.providerId === aiProviderId.value)?.name || aiProviderId.value
+})
+
+function syncSelectedModelWithProvider(): void {
+  const provider = availableProviders.value.find((item) => item.providerId === aiProviderId.value)
+  selectedAiModel.value = provider?.defaultModel ?? ''
+}
 
 function formatTime(value: string | null): string {
   if (!value) {
@@ -440,7 +459,8 @@ async function loadProviders(): Promise<void> {
     availableProviders.value = list.map((p) => ({
       providerId: p.providerId,
       name: p.name,
-      available: p.available
+      available: p.available,
+      defaultModel: p.defaultModel
     }))
     // Auto-select first available provider if current selection is unavailable
     const currentAvailable = list.find((p) => p.providerId === aiProviderId.value && p.available)
@@ -450,6 +470,7 @@ async function loadProviders(): Promise<void> {
         aiProviderId.value = firstAvailable.providerId
       }
     }
+    syncSelectedModelWithProvider()
   } catch {
     // Keep default provider on error.
   }
@@ -558,7 +579,7 @@ async function summarizeEntry(): Promise<void> {
     language: 'zh-CN',
     length: 'medium',
     providerId: aiProviderId.value,
-    model: '',
+    model: selectedAiModel.value,
     createdAt: new Date().toISOString(),
     usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
   }
@@ -581,6 +602,7 @@ async function summarizeEntry(): Promise<void> {
   try {
     const result = await teamCApi.summarizeEntry(entryId, {
       providerId: aiProviderId.value,
+      model: selectedAiModel.value || undefined,
       length: 'medium'
     })
     if (version === aiVersion) {
@@ -624,7 +646,7 @@ async function translateEntry(): Promise<void> {
     bilingual: false,
     segments: [],
     providerId: aiProviderId.value,
-    model: '',
+    model: selectedAiModel.value,
     createdAt: new Date().toISOString(),
     usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
   }
@@ -674,6 +696,7 @@ async function translateEntry(): Promise<void> {
   try {
     const result = await teamCApi.translateEntry(props.entry.id, {
       providerId: aiProviderId.value,
+      model: selectedAiModel.value || undefined,
       targetLanguage: 'zh-CN',
       bilingual: false
     })
@@ -729,6 +752,7 @@ watch(
 )
 
 watch(aiProviderId, () => {
+  syncSelectedModelWithProvider()
   resetAiResults()
 })
 
@@ -745,6 +769,23 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       <header class="detail-header">
         <h1>{{ entry.title }}</h1>
         <div class="detail-actions">
+          <el-button
+            circle
+            size="small"
+            :type="entry.isFavorite ? 'primary' : 'default'"
+            :title="entry.isFavorite ? 'Remove favorite' : 'Add favorite'"
+            @click="emit('updateEntryState', entry.id, { isFavorite: !entry.isFavorite })"
+          >
+            <span class="detail-star" aria-hidden="true">{{ entry.isFavorite ? '★' : '☆' }}</span>
+          </el-button>
+          <el-button
+            circle
+            size="small"
+            :type="entry.isRead ? 'default' : 'primary'"
+            :icon="Reading"
+            :title="entry.isRead ? 'Mark unread' : 'Mark read'"
+            @click="emit('updateEntryState', entry.id, { isRead: !entry.isRead })"
+          />
           <el-button link type="primary" :icon="Link" @click="chooseOpenLink(entry.url)">打开原文</el-button>
           <el-dropdown trigger="click" @command="handleArticleCommand">
             <el-button :icon="MoreFilled" circle size="small" title="更多文章操作" />
@@ -768,6 +809,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
       <EntryTags :entry-id="entry.id" />
 
       <div class="reader-toolbar">
+        <div class="reader-toolbar-row reader-format-row">
         <el-segmented
           v-model="activeView"
           :options="viewModeOptions"
@@ -810,6 +852,40 @@ teamBApi.onWebviewNewWindow(({ url }) => {
         <el-input-number v-model="fontSize" :min="12" :max="18" size="small" controls-position="right" />
         <span class="reader-control-label">行距</span>
         <el-input-number v-model="lineHeight" :min="1.4" :max="2.2" :step="0.1" size="small" controls-position="right" />
+        </div>
+        <div class="reader-toolbar-row ai-toolbar-row">
+        <el-select
+          v-model="aiProviderId"
+          size="small"
+          class="ai-provider-select"
+          :title="selectedProviderLabel"
+          :disabled="isSummarizing || isTranslating"
+        >
+          <el-option
+            v-for="provider in availableProviders"
+            :key="provider.providerId"
+            :value="provider.providerId"
+            :label="provider.name"
+            :disabled="!provider.available"
+          />
+        </el-select>
+        <el-select
+          v-model="selectedAiModel"
+          size="small"
+          class="ai-model-select"
+          filterable
+          allow-create
+          default-first-option
+          placeholder="Default model"
+          :disabled="isSummarizing || isTranslating"
+        >
+          <el-option
+            v-for="model in availableAiModels"
+            :key="model"
+            :value="model"
+            :label="model"
+          />
+        </el-select>
         <el-dropdown trigger="click" @command="handleAiCommand">
           <el-button class="ai-menu-button" plain size="small" :loading="isSummarizing || isTranslating">
             AI <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -829,6 +905,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
         <span v-if="content && !hasCleanedMarkdown" class="ai-provider-hint">
           {{ aiContentMessage }}
         </span>
+        </div>
       </div>
 
       <!-- Reading Area -->
@@ -1094,6 +1171,21 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   max-width: 420px;
 }
 
+.ai-provider-select {
+  width: 150px;
+  flex: 0 0 150px;
+}
+
+.ai-model-select {
+  width: 180px;
+  flex: 0 0 180px;
+}
+
+.detail-star {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .notes-fab {
   position: absolute;
   right: 28px;
@@ -1104,17 +1196,17 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   gap: 6px;
   min-height: 34px;
   padding: 0 13px;
-  border: 1px solid rgba(207, 196, 179, 0.86);
+  border: 1px solid rgba(229, 231, 235, 0.92);
   border-radius: 999px;
   color: var(--muted);
   cursor: pointer;
-  background: rgba(255, 253, 250, 0.88);
-  box-shadow: 0 10px 24px rgba(75, 60, 39, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 .notes-fab:hover {
   color: var(--brand-strong);
-  border-color: rgba(163, 90, 22, 0.36);
+  border-color: rgba(148, 163, 184, 0.42);
   background: var(--brand-soft);
 }
 
@@ -1134,14 +1226,14 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 .ai-error-area {
   border-top: 1px solid var(--line);
   padding: 12px 24px;
-  background: rgba(255, 253, 250, 0.62);
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .embedded-browser-shell {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(37, 35, 31, 0.5);
+  background: rgba(15, 31, 54, 0.48);
   backdrop-filter: blur(10px);
 }
 
@@ -1152,10 +1244,10 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  border: 1px solid rgba(222, 214, 200, 0.82);
+  border: 1px solid rgba(229, 231, 235, 0.92);
   border-radius: 18px;
   background: var(--paper);
-  box-shadow: 0 26px 70px rgba(37, 35, 31, 0.28);
+  box-shadow: 0 26px 70px rgba(18, 52, 54, 0.22);
 }
 
 .embedded-browser-toolbar {
@@ -1168,7 +1260,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
   border-radius: 18px 18px 0 0;
-  background: #fffdfa;
+  background: #ffffff;
 }
 
 .embedded-browser-toolbar :deep(.el-button.is-circle) {
@@ -1297,9 +1389,9 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   margin: 0 auto 18px;
   padding: 16px 20px;
   border-radius: 16px;
-  border: 1px solid rgba(207, 196, 179, 0.76);
-  background: #fff8ef;
-  box-shadow: 0 10px 24px rgba(75, 60, 39, 0.06);
+  border: 1px solid rgba(229, 231, 235, 0.96);
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
 
 .summary-inline-header {
@@ -1332,8 +1424,8 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 
 /* Dark / sepia overrides */
 .summary-inline-card.reader-dark {
-  background: #29221c;
-  border-color: rgba(255, 248, 239, 0.1);
+  background: #111827;
+  border-color: rgba(248, 250, 252, 0.14);
 }
 
 .summary-inline-card.reader-dark .summary-inline-text {
@@ -1354,7 +1446,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   max-width: 780px;
   margin: 0 auto;
   padding: 30px 34px 42px;
-  border: 1px solid rgba(222, 214, 200, 0.76);
+  border: 1px solid rgba(229, 231, 235, 0.92);
   border-radius: 20px;
   background: var(--paper);
   box-shadow: var(--shadow-paper);
@@ -1403,7 +1495,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   max-width: 820px;
   margin: 0 auto;
   padding: 30px 34px 42px;
-  border: 1px solid rgba(222, 214, 200, 0.76);
+  border: 1px solid rgba(229, 231, 235, 0.92);
   border-radius: 20px;
   background: var(--paper);
   box-shadow: var(--shadow-paper);
@@ -1446,9 +1538,9 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   line-height: 1.6;
   margin-bottom: 8px;
   padding: 10px 12px;
-  background: rgba(117, 111, 102, 0.08);
+  background: rgba(248, 250, 252, 0.96);
   border-radius: 12px;
-  border-left: 3px solid #d0d5dd;
+  border-left: 3px solid #cbd5e1;
 }
 
 .trans-seg-source :deep(p) {
@@ -1541,7 +1633,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 .trans-seg-target :deep(blockquote) {
   margin: 0.6em 0;
   padding: 4px 12px;
-  border-left: 3px solid #d0d5dd;
+  border-left: 3px solid #cbd5e1;
   color: var(--muted);
 }
 
@@ -1599,8 +1691,8 @@ teamBApi.onWebviewNewWindow(({ url }) => {
 
 .summary-dedicated-view.reader-dark,
 .translation-view.reader-dark {
-  background: #151a1f;
-  border-color: rgba(255, 255, 255, 0.08);
+  background: #111827;
+  border-color: rgba(248, 250, 252, 0.12);
 }
 
 .reader-sepia .trans-seg-source {
