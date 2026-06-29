@@ -76,6 +76,16 @@ A paragraph with **bold** and *italic*.
     expect(html).toContain('<img src="https://example.com/image.png"')
   })
 
+  it('does not auto-link URLs inside generated Markdown link attributes', () => {
+    const html = simpleMarkdownToHtml('德国物理学家[马克斯·普朗克](https://en.wikipedia.org/wiki/Max_Planck)发现了[量子](https://en.wikipedia.org/wiki/Quantum)。')
+
+    expect(html).toContain('<a href="https://en.wikipedia.org/wiki/Max_Planck"')
+    expect(html).toContain('>马克斯·普朗克</a>')
+    expect(html).toContain('<a href="https://en.wikipedia.org/wiki/Quantum"')
+    expect(html).not.toContain('target=&quot;_blank&quot;')
+    expect(html).not.toContain('rel=&quot;noreferrer&quot;')
+  })
+
   it('preserves titles on image links', () => {
     const html = simpleMarkdownToHtml(`[
 ![Alt](https://example.com/image.png "Image title")

@@ -22,9 +22,9 @@ import {
   Upload,
   User
 } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { teamBApi, teamCApi } from '../api/client'
-import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegmentEvent } from '../types'
+import type { EntryContent, EntryItem, SummaryResult, TranslationResult, TranslationSegment, TranslationSegmentEvent } from '../types'
 import { renderMarkdownToHtml, simpleMarkdownToHtml } from '../utils/readerMarkdown'
 import { resolveAiAction } from '../utils/aiAction'
 import { resetAiView, type ReaderViewMode } from '../utils/readerView'
@@ -55,12 +55,13 @@ const isTranslating = ref(false)
 const aiErrorMessage = ref('')
 const summaryResult = ref<SummaryResult | null>(null)
 const translationResult = ref<TranslationResult | null>(null)
-const aiProviderId = ref('mock')
+const MOCK_PROVIDER_ID = 'mock'
+
+const aiProviderId = ref('')
 const providerPanelVisible = ref(false)
 const notesDrawerVisible = ref(false)
 const noteCount = ref(0)
 const availableProviders = ref<Array<{ providerId: string; name: string; available: boolean; defaultModel: string | null }>>([])
-const selectedAiModel = ref('')
 const embeddedBrowserVisible = ref(false)
 const embeddedBrowserUrl = ref('')
 const embeddedBrowserAddress = ref('')
@@ -110,19 +111,15 @@ let embeddedBrowserResizeState: {
   startRect: EmbeddedBrowserRect
 } | null = null
 
-const availableAiModels = computed(() => {
-  const provider = availableProviders.value.find((item) => item.providerId === aiProviderId.value)
-  return provider?.defaultModel ? [provider.defaultModel] : []
+const selectedProvider = computed(() => {
+  return availableProviders.value.find((item) => item.providerId === aiProviderId.value) ?? null
 })
 
 const selectedProviderLabel = computed(() => {
-  return availableProviders.value.find((item) => item.providerId === aiProviderId.value)?.name || aiProviderId.value
+  return selectedProvider.value?.name || aiProviderId.value
 })
 
-function syncSelectedModelWithProvider(): void {
-  const provider = availableProviders.value.find((item) => item.providerId === aiProviderId.value)
-  selectedAiModel.value = provider?.defaultModel ?? ''
-}
+const selectedProviderAvailable = computed(() => selectedProvider.value?.available ?? false)
 
 function formatTime(value: string | null): string {
   if (!value) {
@@ -168,7 +165,11 @@ const hasAiResult = computed(() => Boolean(summaryResult.value || translationRes
 const cleanedMarkdown = computed(() => content.value?.markdown.trim() ?? '')
 const hasCleanedMarkdown = computed(() => cleanedMarkdown.value.length > 0)
 const aiContentMessage = '当前文章没有可用于 AI 处理的 cleaned Markdown，请刷新正文或换一篇文章。'
-const isAiActionDisabled = computed(() => isLoading.value || !hasCleanedMarkdown.value)
+const providerConfigMessage = computed(() => {
+  const name = selectedProvider.value?.name ?? '当前 AI Provider'
+  return `${name} 尚未配置 API Key，请先在 Provider 设置中配置后再使用。`
+})
+const isAiActionDisabled = computed(() => isLoading.value || !hasCleanedMarkdown.value || !selectedProviderAvailable.value)
 
 const viewModeOptions = computed(() => {
   const options: Array<{ label: string; value: string }> = [
@@ -438,6 +439,23 @@ function closeEmbeddedBrowser(): void {
   embeddedBrowserError.value = ''
 }
 
+function isMediaOnlyMarkdown(source: string): boolean {
+  const textOnly = source
+    .replace(/\[\s*!\[[^\]]*\]\([^)]+\)\s*\]\([^)]+\)/g, '')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/<img\b[^>]*>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?[^>]+>/g, '')
+    .replace(/^(\s*[-*_]){3,}\s*$/gm, '')
+    .replace(/\s+/g, '')
+
+  return textOnly.length === 0
+}
+
+function isPreservedMediaSegment(segment: TranslationSegment): boolean {
+  return isMediaOnlyMarkdown(segment.source)
+}
+
 function handleReaderClick(event: MouseEvent): void {
   const target = event.target
   if (!(target instanceof Element)) {
@@ -456,24 +474,49 @@ function handleReaderClick(event: MouseEvent): void {
 async function loadProviders(): Promise<void> {
   try {
     const list = await teamCApi.listProviders()
-    availableProviders.value = list.map((p) => ({
-      providerId: p.providerId,
-      name: p.name,
-      available: p.available,
-      defaultModel: p.defaultModel
-    }))
-    // Auto-select first available provider if current selection is unavailable
-    const currentAvailable = list.find((p) => p.providerId === aiProviderId.value && p.available)
-    if (!currentAvailable) {
-      const firstAvailable = list.find((p) => p.available)
-      if (firstAvailable) {
-        aiProviderId.value = firstAvailable.providerId
-      }
+    const providers = list
+      .filter((p) => p.providerId !== MOCK_PROVIDER_ID)
+      .map((p) => ({
+        providerId: p.providerId,
+        name: p.name,
+        available: p.available,
+        defaultModel: p.defaultModel
+      }))
+    availableProviders.value = providers
+
+    const currentProvider = providers.find((p) => p.providerId === aiProviderId.value)
+    if (!currentProvider) {
+      const firstAvailable = providers.find((p) => p.available)
+      aiProviderId.value = firstAvailable?.providerId ?? providers[0]?.providerId ?? ''
     }
-    syncSelectedModelWithProvider()
   } catch {
     // Keep default provider on error.
   }
+}
+
+function promptProviderConfiguration(): void {
+  aiErrorMessage.value = providerConfigMessage.value
+  ElMessage.warning(providerConfigMessage.value)
+  providerPanelVisible.value = true
+}
+
+function handleProviderChange(): void {
+  resetAiResults()
+  if (!selectedProviderAvailable.value) {
+    promptProviderConfiguration()
+  }
+}
+
+async function ensureProviderConfigured(): Promise<boolean> {
+  if (selectedProviderAvailable.value) {
+    return true
+  }
+  await loadProviders()
+  if (selectedProviderAvailable.value) {
+    return true
+  }
+  promptProviderConfiguration()
+  return false
 }
 
 async function loadLatestAiResults(): Promise<void> {
@@ -568,6 +611,9 @@ async function summarizeEntry(): Promise<void> {
     aiErrorMessage.value = aiContentMessage
     return
   }
+  if (!(await ensureProviderConfigured())) {
+    return
+  }
 
   const version = ++aiVersion
   const entryId = props.entry.id
@@ -579,7 +625,7 @@ async function summarizeEntry(): Promise<void> {
     language: 'zh-CN',
     length: 'medium',
     providerId: aiProviderId.value,
-    model: selectedAiModel.value,
+    model: '',
     createdAt: new Date().toISOString(),
     usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
   }
@@ -602,7 +648,6 @@ async function summarizeEntry(): Promise<void> {
   try {
     const result = await teamCApi.summarizeEntry(entryId, {
       providerId: aiProviderId.value,
-      model: selectedAiModel.value || undefined,
       length: 'medium'
     })
     if (version === aiVersion) {
@@ -636,6 +681,9 @@ async function translateEntry(): Promise<void> {
     aiErrorMessage.value = aiContentMessage
     return
   }
+  if (!(await ensureProviderConfigured())) {
+    return
+  }
 
   const version = ++aiVersion
   isTranslating.value = true
@@ -646,7 +694,7 @@ async function translateEntry(): Promise<void> {
     bilingual: false,
     segments: [],
     providerId: aiProviderId.value,
-    model: selectedAiModel.value,
+    model: '',
     createdAt: new Date().toISOString(),
     usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
   }
@@ -696,7 +744,6 @@ async function translateEntry(): Promise<void> {
   try {
     const result = await teamCApi.translateEntry(props.entry.id, {
       providerId: aiProviderId.value,
-      model: selectedAiModel.value || undefined,
       targetLanguage: 'zh-CN',
       bilingual: false
     })
@@ -750,11 +797,6 @@ watch(
   },
   { immediate: true }
 )
-
-watch(aiProviderId, () => {
-  syncSelectedModelWithProvider()
-  resetAiResults()
-})
 
 teamBApi.onWebviewNewWindow(({ url }) => {
   embeddedBrowserUrl.value = url
@@ -860,31 +902,20 @@ teamBApi.onWebviewNewWindow(({ url }) => {
           class="ai-provider-select"
           :title="selectedProviderLabel"
           :disabled="isSummarizing || isTranslating"
+          placeholder="配置 Provider"
+          @change="handleProviderChange"
         >
           <el-option
             v-for="provider in availableProviders"
             :key="provider.providerId"
             :value="provider.providerId"
             :label="provider.name"
-            :disabled="!provider.available"
-          />
-        </el-select>
-        <el-select
-          v-model="selectedAiModel"
-          size="small"
-          class="ai-model-select"
-          filterable
-          allow-create
-          default-first-option
-          placeholder="Default model"
-          :disabled="isSummarizing || isTranslating"
-        >
-          <el-option
-            v-for="model in availableAiModels"
-            :key="model"
-            :value="model"
-            :label="model"
-          />
+          >
+            <div class="ai-provider-option">
+              <span>{{ provider.name }}</span>
+              <el-tag v-if="!provider.available" size="small" type="warning">未配置</el-tag>
+            </div>
+          </el-option>
         </el-select>
         <el-dropdown trigger="click" @command="handleAiCommand">
           <el-button class="ai-menu-button" plain size="small" :loading="isSummarizing || isTranslating">
@@ -978,6 +1009,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
             class="translation-view"
             :class="`reader-${readerTheme}`"
             :style="readerStyle"
+            @click="handleReaderClick"
           >
             <div class="translation-header">
               <h2>AI Translation</h2>
@@ -1004,6 +1036,12 @@ teamBApi.onWebviewNewWindow(({ url }) => {
               class="trans-pair"
             >
               <div
+                v-if="isPreservedMediaSegment(seg)"
+                class="trans-seg-target trans-seg-media"
+                v-html="simpleMarkdownToHtml(seg.source)"
+              />
+              <template v-else>
+              <div
                 v-if="seg.status === 'success'"
                 class="trans-seg-source"
                 v-html="simpleMarkdownToHtml(seg.source)"
@@ -1021,6 +1059,7 @@ teamBApi.onWebviewNewWindow(({ url }) => {
                 class="trans-seg-target"
                 v-html="simpleMarkdownToHtml(seg.translated)"
               />
+              </template>
             </div>
           </article>
         </template>
@@ -1148,8 +1187,9 @@ teamBApi.onWebviewNewWindow(({ url }) => {
     title="AI Provider 设置"
     width="680"
     :destroy-on-close="true"
+    @closed="loadProviders"
   >
-    <ProviderPanel />
+    <ProviderPanel @provider-updated="loadProviders" />
   </el-dialog>
 
   <el-drawer
@@ -1176,9 +1216,18 @@ teamBApi.onWebviewNewWindow(({ url }) => {
   flex: 0 0 150px;
 }
 
-.ai-model-select {
-  width: 180px;
-  flex: 0 0 180px;
+.ai-provider-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-provider-option span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-star {

@@ -13,6 +13,11 @@ interface ProviderRow extends ProviderInfo {
 
 const rows = ref<ProviderRow[]>([])
 const isLoading = ref(false)
+const MOCK_PROVIDER_ID = 'mock'
+
+const emit = defineEmits<{
+  providerUpdated: []
+}>()
 
 const editDialogVisible = ref(false)
 const editProviderId = ref('')
@@ -45,7 +50,9 @@ async function loadProviders(): Promise<void> {
   isLoading.value = true
   try {
     const list = await teamCApi.listProviders()
-    rows.value = list.map((p) => ({ ...p, testStatus: 'idle', testError: null }))
+    rows.value = list
+      .filter((p) => p.providerId !== MOCK_PROVIDER_ID)
+      .map((p) => ({ ...p, testStatus: 'idle', testError: null }))
   } finally {
     isLoading.value = false
   }
@@ -84,6 +91,7 @@ async function saveApiKey(): Promise<void> {
     if (result.ok) {
       editDialogVisible.value = false
       await loadProviders()
+      emit('providerUpdated')
     } else {
       saveError.value = result.error ?? '保存失败'
     }

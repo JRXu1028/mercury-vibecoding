@@ -31,6 +31,7 @@ const selectedEntryFeedTitle = computed(() => {
 const addFeedDialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const addFeedUrl = ref('')
+const isAddingFeed = ref(false)
 const opmlContent = ref('')
 const hasDesktopBridge = Boolean(window.teamAApi)
 const autoSyncEnabled = ref(true)
@@ -43,10 +44,14 @@ async function initialLoad(): Promise<void> {
 }
 
 async function submitAddFeed(): Promise<void> {
+  if (isAddingFeed.value) {
+    return
+  }
   if (!addFeedUrl.value.trim()) {
     ElMessage.warning('Please input a feed URL')
     return
   }
+  isAddingFeed.value = true
   try {
     await store.addFeed(addFeedUrl.value.trim())
     ElMessage.success('Feed added')
@@ -54,6 +59,8 @@ async function submitAddFeed(): Promise<void> {
     addFeedUrl.value = ''
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    isAddingFeed.value = false
   }
 }
 
@@ -281,11 +288,29 @@ onBeforeUnmount(() => {
       />
     </main>
 
-    <el-dialog v-model="addFeedDialogVisible" title="Add Feed" width="460">
-      <el-input v-model="addFeedUrl" placeholder="https://example.com/feed.xml" />
+    <el-dialog
+      v-model="addFeedDialogVisible"
+      title="Add Feed"
+      width="460"
+      :close-on-click-modal="!isAddingFeed"
+      :close-on-press-escape="!isAddingFeed"
+    >
+      <el-input
+        v-model="addFeedUrl"
+        placeholder="https://example.com/feed.xml"
+        :disabled="isAddingFeed"
+        @keyup.enter="submitAddFeed"
+      />
       <template #footer>
-        <el-button @click="addFeedDialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="submitAddFeed">Add</el-button>
+        <el-button :disabled="isAddingFeed" @click="addFeedDialogVisible = false">Cancel</el-button>
+        <el-button
+          type="primary"
+          :loading="isAddingFeed"
+          :disabled="!addFeedUrl.trim()"
+          @click="submitAddFeed"
+        >
+          {{ isAddingFeed ? 'Adding...' : 'Add' }}
+        </el-button>
       </template>
     </el-dialog>
 

@@ -13,7 +13,7 @@ import { UsageService } from './usageService.js'
 import { AiResultService } from './aiResultService.js'
 import { logger } from './logger.js'
 import { getProvider, hasProvider, listProviderIds, registerProvider } from './ai/providerRegistry.js'
-import { deepSeekProvider, createDeepSeekProvider } from './ai/providers/deepSeekProvider.js'
+import { deepSeekProvider, createDeepSeekProvider, DEFAULT_DEEPSEEK_MODEL } from './ai/providers/deepSeekProvider.js'
 import { mockProvider } from './ai/providers/mockProvider.js'
 import { createOpenAICompatibleProvider } from './ai/providers/openAICompatibleProvider.js'
 import { summarizeArticleStream } from './ai/summaryAgent.js'
@@ -84,7 +84,8 @@ function registerAiProviders(): void {
   usageService.upsertProvider({
     providerId: deepSeekProvider.id,
     name: deepSeekProvider.name,
-    apiKeyEnvVar: 'DEEPSEEK_API_KEY'
+    apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+    defaultModel: DEFAULT_DEEPSEEK_MODEL
   })
   const deepSeekApiKey = decryptStoredKey(deepSeekProvider.id)
   registerProvider(

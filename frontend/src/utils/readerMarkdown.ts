@@ -27,19 +27,25 @@ function escapeHtml(s: string): string {
  *  markdown links, images, and bare URLs. */
 function processInline(text: string): string {
   let t = text
+  const inlineHtml: string[] = []
+  const stashInlineHtml = (html: string): string => {
+    const index = inlineHtml.length
+    inlineHtml.push(html)
+    return `\x00INLINEHTML${index}\x00`
+  }
 
   // Images ![alt](url) — must go before links
   t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
     (_m, alt, url, title) => {
       const titleAttr = title ? ` title="${escapeHtml(title)}"` : ''
-      return `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${titleAttr}>`
+      return stashInlineHtml(`<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${titleAttr}>`)
     })
 
   // Links [text](url "title")
   t = t.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
     (_m, label, url, title) => {
       const titleAttr = title ? ` title="${escapeHtml(title)}"` : ''
-      return `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer"${titleAttr}>${label}</a>`
+      return stashInlineHtml(`<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer"${titleAttr}>${label}</a>`)
     })
 
   // Bold **text** or __text__
@@ -62,7 +68,7 @@ function processInline(text: string): string {
     '<a href="$1" target="_blank" rel="noreferrer">$1</a>'
   )
 
-  return t
+  return t.replace(/\x00INLINEHTML(\d+)\x00/g, (_m, idx) => inlineHtml[Number(idx)])
 }
 
 /**

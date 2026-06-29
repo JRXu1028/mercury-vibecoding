@@ -56,6 +56,19 @@ function splitMarkdownIntoSourceSegments(markdown: string): TranslationSourceSeg
     .map((source, index) => ({ index, source }))
 }
 
+function isNonTranslatableMarkdownSegment(source: string): boolean {
+  const textOnly = source
+    .replace(/\[\s*!\[[^\]]*\]\([^)]+\)\s*\]\([^)]+\)/gu, '')
+    .replace(/!\[[^\]]*\]\([^)]+\)/gu, '')
+    .replace(/<img\b[^>]*>/giu, '')
+    .replace(/<!--[\s\S]*?-->/gu, '')
+    .replace(/<\/?[^>]+>/gu, '')
+    .replace(/^(\s*[-*_]){3,}\s*$/gmu, '')
+    .replace(/\s+/gu, '')
+
+  return textOnly.length === 0
+}
+
 function buildTranslationContext({
   article,
   sourceLanguage,
@@ -186,6 +199,18 @@ export async function translateArticle(
 
   for (const sourceSegment of sourceSegments) {
     try {
+      if (isNonTranslatableMarkdownSegment(sourceSegment.source)) {
+        const seg: TranslationSegment = {
+          index: sourceSegment.index,
+          source: sourceSegment.source,
+          translated: sourceSegment.source,
+          status: 'success',
+        }
+        segments.push(seg)
+        onProgress?.(seg, segments.length, total)
+        continue
+      }
+
       const messages = buildTranslationMessages(
         article,
         sourceSegment,
