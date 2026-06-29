@@ -129,7 +129,27 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Vibe Reader，因�
    ```
 3. 将 AI Provider 切换为 **openai-compatible**
 
-### 4.4 阅读器工具栏
+### 4.4 ECNU 大模型模式
+
+ECNU（华东师范大学）大模型通过 OpenAI-Compatible 协议接入，默认端点 `https://chat.ecnu.edu.cn/open/api/v1`，默认模型 `ecnu-max`。
+
+**方式一：应用内设置（推荐）**
+
+1. 在应用中选中任意文章，在右侧 AI 工具栏点击齿轮图标 ⚙️
+2. 在弹出的 Provider 设置面板中，找到 ECNU Provider，点击"设置"
+3. 输入你的 ECNU API Key，点击"保存"
+4. 将 AI Provider 切换为 **ECNU 大模型**，即可使用
+
+**方式二：环境变量**
+
+```bash
+export ECNU_API_KEY=your-ecnu-key
+export ECNU_BASE_URL=https://chat.ecnu.edu.cn/open/api/v1   # 可选
+export ECNU_MODEL=ecnu-max                                   # 可选
+"/Applications/Vibe Reader.app/Contents/MacOS/Vibe Reader" &
+```
+
+### 4.5 阅读器工具栏
 
 | 按钮 | 功能 |
 |------|------|
@@ -138,7 +158,7 @@ macOS 可能提示 "无法验证开发者" 或 "无法打开 Vibe Reader，因�
 | 字号调节 | 调整正文字体大小 (12-18px) |
 | 行高调节 | 调整正文行间距 (1.4-2.2) |
 
-### 4.5 流式摘要
+### 4.6 流式摘要
 
 v0.2.0 起支持流式摘要：点击 **AI Summary** 后，摘要内容会以 SSE 方式逐字推送至右侧面板，无需等待完整响应。最近一次 AI 结果会持久化保存，切换文章后仍可回看。
 

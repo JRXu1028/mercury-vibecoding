@@ -49,7 +49,7 @@
 
 ## 2. 数据库 Schema
 
-### 2.1 已实现 (6 张数据表 + 1 张关联表)
+### 2.1 已实现 (9 张数据表 + 1 张关联表)
 
 | 表名 | 所属组 | 用途 |
 |------|--------|------|
@@ -57,6 +57,8 @@
 | `entries` | Team A/B | 文章条目 + 清洗正文缓存 |
 | `llm_providers` | Team D/C | AI 提供商配置 |
 | `llm_usage` | Team D/C | Token 用量记录 |
+| `ai_summaries` | Team C | AI 摘要结果持久化 |
+| `ai_translations` | Team C | AI 翻译结果持久化 |
 | `notes` | Team D | 笔记 (Week 4 协作) |
 | `tags` | Team D | 标签 (Week 4 协作) |
 | `entry_tags` | Team D | 文章-标签关联 |

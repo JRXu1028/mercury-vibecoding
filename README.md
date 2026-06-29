@@ -1,4 +1,11 @@
-# Mercury Vibecoding Project
+# Vibe Reader · Mercury Vibecoding Project
+
+> 本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签的 RSS 阅读器
+
+[![Release](https://img.shields.io/badge/release-v0.2.6-blue)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
+[![License](https://img.shields.io/badge/license-course%20project-orange)]()
+[![Tests](https://img.shields.io/badge/tests-54%2F54-brightgreen)]()
 
 ## 项目简介
 
@@ -6,9 +13,16 @@
 
 参考项目：https://github.com/neolee/mercury
 
-项目定位：一个本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签功能的 RSS 阅读器。
+> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.6**）。仓库保留原项目代号 `mercury-vibecoding`。
 
-> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.6**）。仓库保留原项目代号。
+## 核心特性
+
+- 📡 **订阅管理**：RSS / Atom 解析、OPML 导入导出、手动 + 定时自动同步
+- 📖 **沉浸阅读**：Readability 正文提取、HTML 清洗、Markdown 渲染、Light / Sepia / Dark 三主题、字号行距可调
+- 🤖 **AI 增强**：流式摘要（SSE 推送，不阻塞 UI）、分段翻译、结果持久化、四种 LLM Provider（Mock / DeepSeek / OpenAI-Compatible / ECNU）
+- 🏷️ **知识管理**：文章标签、阅读笔记、按标签筛选
+- 🔒 **本地优先**：数据存于本地 SQLite，零配置零注册，不主动采集用户数据
+- 🖥️ **跨平台**：macOS（arm64）、Windows（x64）、Linux（AppImage / deb）三平台 CI 自动构建
 
 ## 下载安装
 
@@ -216,8 +230,8 @@ npm run start:desktop
 
 - **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
 - **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（Markdown 渲染、多套阅读样式模板、链接应用内/浏览器打开）
-- **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / ECNU 三种 Provider、API Key 加密存储与连通性测试、Provider 管理面板、实时翻译推送、LLM 用量统计、侧栏折叠
-- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（7 张表 + 迁移）、34 个 IPC 通道、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台打包（Mac + Windows）
+- **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible / ECNU 四种 Provider、API Key 加密存储与连通性测试、Provider 管理面板、流式摘要与实时翻译推送、LLM 用量统计、AI 结果持久化、侧栏折叠
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（10 张表 + 增量迁移）、35 个 IPC 通道（31 R→M + 4 M→R）、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台 CI 打包（macOS / Windows / Linux）
 
 ---
 
@@ -248,4 +262,6 @@ npm run start:desktop
 | 2026-06-24 | Team B | 完成 v0.2.5：内嵌浏览器支持前进/后退/刷新（webContents 导航栈），不再弹外部应用。 |
 | 2026-06-24 | Team D | 合并上述改动，bump 至 v0.2.5，CI 自动三平台构建 + 发布 Release。 |
 | 2026-06-26 | Team B | 修复了应用内嵌浏览器链接弹新窗口、网页清洗后 Markdown 图片与块级链接渲染异常、以及 entry 卡片格式问题。 |
-| 2026-06-29 | Team A | 更新了整体的 UI 界面。 |
+| 2026-06-26 | Team D | 文档版本号对齐至 v0.2.6（README / INSTALL_GUIDE / DEMO_GUIDE / TEAM_D），author 元数据对齐 Vibe Reader 品牌。 |
+| 2026-06-29 | Team B | 重构 Reader 阅读视图界面（`dadf780`）、新增阅读视图工具栏图标（`dd493e4`）、扩充 `contentService.ts` 清洗逻辑与 `readerMarkdown.ts` 渲染管线，新增 10 个测试用例（总计 54/54 通过）。 |
+| 2026-06-29 | Team A | 更新整体的 UI 界面、补充 Team A 工作日志（`TEAM_A_WORKLOG.md`）。 |
