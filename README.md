@@ -264,4 +264,4 @@ npm run start:desktop
 | 2026-06-26 | Team B | 修复了应用内嵌浏览器链接弹新窗口、网页清洗后 Markdown 图片与块级链接渲染异常、以及 entry 卡片格式问题。 |
 | 2026-06-26 | Team D | 文档版本号对齐至 v0.2.6（README / INSTALL_GUIDE / DEMO_GUIDE / TEAM_D），author 元数据对齐 Vibe Reader 品牌。 |
 | 2026-06-29 | Team B | 重构 Reader 阅读视图界面（`dadf780`）、新增阅读视图工具栏图标（`dd493e4`）、扩充 `contentService.ts` 清洗逻辑与 `readerMarkdown.ts` 渲染管线，新增 10 个测试用例（总计 54/54 通过）。 |
-| 2026-06-29 | Team A | 更新整体的 UI 界面、补充 Team A 工作日志（`TEAM_A_WORKLOG.md`）。 |
+| 2026-06-29 | Team A | 更新整体的 UI 界面、新增已读未读和收藏功能、补充 Team A 工作日志（`TEAM_A_WORKLOG.md`）。 |
