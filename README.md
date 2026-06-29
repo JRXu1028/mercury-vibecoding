@@ -2,7 +2,7 @@
 
 > 本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签的 RSS 阅读器
 
-[![Release](https://img.shields.io/badge/release-v0.2.6-blue)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
+[![Release](https://img.shields.io/badge/release-v0.2.7-blue)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
 [![License](https://img.shields.io/badge/license-course%20project-orange)]()
 [![Tests](https://img.shields.io/badge/tests-54%2F54-brightgreen)]()
@@ -13,7 +13,7 @@
 
 参考项目：https://github.com/neolee/mercury
 
-> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.6**）。仓库保留原项目代号 `mercury-vibecoding`。
+> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.7**）。仓库保留原项目代号 `mercury-vibecoding`。
 
 ## 核心特性
 

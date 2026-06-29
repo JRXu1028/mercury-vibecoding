@@ -4,7 +4,7 @@
 
 ### 0.1 下载安装
 
-下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.6-arm64.dmg`。
+下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.7-arm64.dmg`。
 
 双击 dmg → 拖入 Applications → 首次启动需右键 → 打开（Gatekeeper）。
 
