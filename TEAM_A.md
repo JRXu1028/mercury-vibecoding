@@ -106,5 +106,5 @@ The OPML import dialog supports:
 
 ## Note
 
-The original plan mentions `better-sqlite3`. In this environment (Node 25), native build for `better-sqlite3` failed due toolchain compatibility.
-This implementation uses `node:sqlite` to keep SQLite-based local-first behavior and ensure reproducible execution.
+The original plan mentions `better-sqlite3`. In this environment (Node 22+, `engines.node >= 22.0.0`), native build for `better-sqlite3` was avoided to remove native toolchain dependency.
+This implementation uses the built-in `node:sqlite` to keep SQLite-based local-first behavior and ensure reproducible execution across macOS / Windows / Linux.

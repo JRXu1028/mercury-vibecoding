@@ -122,6 +122,37 @@ CREATE TABLE llm_usage (
   created_at TEXT NOT NULL
 );
 
+-- ai_summaries: AI 摘要结果持久化 (Team C)
+CREATE TABLE ai_summaries (
+  entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE,
+  provider_id TEXT NOT NULL,
+  model TEXT NOT NULL,
+  language TEXT NOT NULL,
+  length TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  prompt_tokens INTEGER NOT NULL,
+  completion_tokens INTEGER NOT NULL,
+  total_tokens INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- ai_translations: AI 翻译结果持久化 (Team C)
+CREATE TABLE ai_translations (
+  entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE,
+  provider_id TEXT NOT NULL,
+  model TEXT NOT NULL,
+  source_language TEXT,
+  target_language TEXT NOT NULL,
+  bilingual INTEGER NOT NULL,
+  segments_json TEXT NOT NULL,
+  prompt_tokens INTEGER NOT NULL,
+  completion_tokens INTEGER NOT NULL,
+  total_tokens INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 -- notes: 阅读笔记
 CREATE TABLE notes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
