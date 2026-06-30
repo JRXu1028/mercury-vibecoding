@@ -90,6 +90,7 @@ Vibe Reader 桌面应用
 | 张笑铖 |  [@zxc1844](https://github.com/zxc1844)  | 
 | 黄博 | [@datieBB](https://github.com/datieBB) |
 | 李欣昊 | [@Se9mentree](https://github.com/Se9mentree) |
+
 ---
 
 ## 团队分工
@@ -100,7 +101,6 @@ Vibe Reader 桌面应用
 | Team B：内容清洗 & 阅读组 | 刘烨铭、郑一钒、章可仲 | 正文提取、HTML 清洗、Markdown 转换、Reader 阅读视图、主题和阅读样式 | 点击文章后可以看到清洗后的正文，并具有基本阅读体验 |
 | Team C：AI Agent 组 | 徐佳睿、曲馥诺、黄博、张笑铖 | LLM Provider 配置、连通性测试、Summary Agent、Translation Agent、Prompt 模板、LLM 用量记录 | 配置模型后可以生成文章摘要和分段翻译 |
 | Team D：基础设施 & 集成组 | 陈岩松 | 项目脚手架、IPC 规范、数据库 schema、全局布局、打包配置、文档 | 应用能稳定启动，各组模块能接入，最终可以打包演示 |
-
 
 ---
 

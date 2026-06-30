@@ -1,4 +1,4 @@
-# Mercury Vibecoding — 演示测试数据
+# Vibe Reader — 演示测试数据
 
 ## 测试 RSS 源（10 个）
 
@@ -38,6 +38,16 @@
 export OPENAI_COMPATIBLE_API_KEY=sk-your-key
 export OPENAI_COMPATIBLE_BASE_URL=https://your-endpoint/v1
 export OPENAI_COMPATIBLE_MODEL=gpt-4o-mini
+```
+
+### 方案四：ECNU 大模型
+
+华东师范大学 OpenAI-compatible 端点，适合校园网内演示：
+
+```bash
+export ECNU_API_KEY=your-ecnu-key
+export ECNU_BASE_URL=https://chat.ecnu.edu.cn/open/api/v1   # 可选
+export ECNU_MODEL=ecnu-max                                   # 可选
 ```
 
 ## 演示流程

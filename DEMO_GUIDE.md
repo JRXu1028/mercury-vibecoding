@@ -76,7 +76,7 @@
 - 等摘要生成完
 - **切到另一篇文章再切回来** → 上次的摘要仍在
 - 重启应用 → 同样保留
-- 数据存在本地 SQLite (`aiResults` 表)
+- 数据存在本地 SQLite (`ai_summaries` / `ai_translations` 表)
 
 ### Step 6 — 内嵌浏览器（本周亮点 #4，1.5 分钟）
 
@@ -149,7 +149,7 @@
   A: 后端 `openAIStream.ts` 调 OpenAI-compatible `/chat/completions` with `stream: true`，通过 IPC `ai:summaryChunk` 事件推送给渲染进程。
 
 - **Q: 持久化怎么不丢？**
-  A: `aiResultService.ts` 在每个 chunk 完成后写入 `aiResults` 表，文章切换时通过 `ai:getLatestResults` 读回。
+  A: `aiResultService.ts` 在每个 chunk 完成后写入 `ai_summaries` / `ai_translations` 表，文章切换时通过 `ai:getLatestResults` 读回。
 
 - **Q: 为什么不签名？**
   A: Apple Developer 99 美元/年，课程阶段绕过 Gatekeeper 即可。

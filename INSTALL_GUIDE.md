@@ -170,6 +170,7 @@ v0.2.0 起支持流式摘要：点击 **AI Summary** 后，摘要内容会以 SS
 |------|--------|------|
 | macOS | `~/Library/Application Support/Vibe Reader/mercury-vibecoding.db` | `~/Library/Application Support/Vibe Reader/logs/mercury.log` |
 | Windows | `%APPDATA%/Vibe Reader/mercury-vibecoding.db` | `%APPDATA%/Vibe Reader/logs/mercury.log` |
+| Linux | `~/.config/Vibe Reader/mercury-vibecoding.db` | `~/.config/Vibe Reader/logs/mercury.log` |
 
 数据独立于应用程序，升级应用不会丢失订阅和文章数据。
 
@@ -206,6 +207,7 @@ npm run dev:desktop
 npm run dist        # 当前平台
 npm run dist:win    # 仅 Windows
 npm run dist:mac    # 仅 macOS
+npm run dist:linux  # 仅 Linux
 
 # 运行测试
 npm test
