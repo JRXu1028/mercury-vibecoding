@@ -267,3 +267,4 @@ npm run start:desktop
 | 2026-06-29 | Team A | 更新整体的 UI 界面、新增已读未读和收藏功能、补充 Team A 工作日志（`TEAM_A_WORKLOG.md`）。 |
 | 2026-06-29 | Team C | 新增 Translation Agent 单元测试（`tests/translationAgent.test.ts`）、扩充 readerMarkdown 测试用例；总计 58/58 测试通过。补充 Team C 工作日志（`TEAM_C_WORKLOG.md`）。 |
 | 2026-06-29 | Team D | bump 至 v0.2.7，CI 三平台构建 + 发布 Release（macOS dmg/zip、Windows exe、Linux AppImage/deb）。 |
+| 2026-06-30 | Team D | 深度文档审计：修正数据表计数（9 张）、IPC 计数（36 = 32 R→M + 4 M→R）、文件行数、openAIStream 路径；清理 31MB pptx 二进制；bump 至 v0.2.8。 |
