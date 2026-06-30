@@ -420,21 +420,21 @@ AI 伙伴用代码 + git blame 核对，给出 D 组工作清单：
 
 | 文件 | 行数 | 内容 | D 组独立 |
 |---|---|---|---|
-| `electron/preload.cjs` | 97 | contextBridge 4 命名空间 | ✅ |
-| `src/electronMain.ts` | 574 | 32 R→M + 5 M→R IPC | ✅ |
-| `src/database.ts` | 166 | 10 表 + 迁移 | ✅（Team C 改过 aiResults） |
-| `src/logger.ts` | — | 统一日志 | ✅ |
-| `src/notesService.ts` | — | 笔记 CRUD | ✅ |
-| `src/tagsService.ts` | — | 标签 CRUD | ✅ |
-| `src/usageService.ts` | — | AI 用量记录 | ⚠️ D 写骨架，Team C 加字段 |
-| `frontend/src/api/client.ts` | 330 | 双通道 API | ✅ |
-| `frontend/src/App.vue` | 288 | 三栏布局 | ✅ |
-| `.github/workflows/release.yml` | 80+ | CI/CD 工作流 | ✅ |
+| `electron/preload.cjs` | 115 | contextBridge 4 命名空间 | ✅ |
+| `src/electronMain.ts` | 574 | 32 R→M + 4 M→R IPC | ✅ |
+| `src/database.ts` | 170 | 9 表 + 迁移 | ✅（Team C 加 ai_summaries/ai_translations） |
+| `src/logger.ts` | 173 | 统一日志 | ✅ |
+| `src/notesService.ts` | 99 | 笔记 CRUD | ✅ |
+| `src/tagsService.ts` | 137 | 标签 CRUD | ✅ |
+| `src/usageService.ts` | 131 | AI 用量记录 | ⚠️ D 写骨架，Team C 加字段 |
+| `frontend/src/api/client.ts` | 348 | 双通道 API | ✅ |
+| `frontend/src/App.vue` | 350 | 三栏布局 | ✅ |
+| `.github/workflows/release.yml` | 127 | CI/CD 工作流 | ✅ |
 
 ### 8.2 关键数据
 
-- **10 张 SQLite 数据表** + 增量迁移机制
-- **32 个 R→M IPC 通道** + **5 个 M→R 推送**（共 37 个）
+- **9 张 SQLite 数据表** + 增量迁移机制
+- **32 个 R→M IPC 通道** + **4 个 M→R 推送**（共 36 个）
 - **3 平台并行 CI 构建**（mac/win/linux）
 - **44 个单元测试**，全过
 - **10 个 Release 版本**（v0.1.0 → v0.2.8，其中 v0.2.2-v0.2.4 为 CI 三平台迭代）

@@ -231,7 +231,7 @@ npm run start:desktop
 - **Team A**：Feed 添加 / 删除、RSS / Atom 解析、Feed 手动同步与定时自动同步、OPML 导入导出
 - **Team B**：正文抓取与 Readability 提取、HTML 清洗、Markdown 转换与缓存、Reader 阅读视图（Markdown 渲染、多套阅读样式模板、链接应用内/浏览器打开）
 - **Team C**：Summary Agent、Translation Agent、Mock / DeepSeek / OpenAI-Compatible / ECNU 四种 Provider、API Key 加密存储与连通性测试、Provider 管理面板、流式摘要与实时翻译推送、LLM 用量统计、AI 结果持久化、侧栏折叠
-- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（10 张表 + 增量迁移）、37 个 IPC 通道（32 R→M + 5 M→R）、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台 CI 打包（macOS / Windows / Linux）
+- **Team D**：项目脚手架与 Electron 桌面化、SQLite 数据库 schema（9 张表 + 增量迁移）、36 个 IPC 通道（32 R→M + 4 M→R）、日志系统、Notes/Tags 后端服务 + 前端 UI、Usage 后端服务、跨平台 CI 打包（macOS / Windows / Linux）
 
 ---
 

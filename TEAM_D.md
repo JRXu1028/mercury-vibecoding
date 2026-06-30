@@ -49,7 +49,7 @@
 
 ## 2. 数据库 Schema
 
-### 2.1 已实现 (9 张数据表 + 1 张关联表)
+### 2.1 已实现 (8 张数据表 + 1 张关联表 = 9 张)
 
 | 表名 | 所属组 | 用途 |
 |------|--------|------|
@@ -161,7 +161,7 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 
 ### 3.1 通道列表 (electronMain.ts → preload.cjs → client.ts)
 
-> 共 37 个：32 个 R→M（renderer 调 main）+ 5 个 M→R（main 推 renderer）。
+> 共 36 个：32 个 R→M（renderer 调 main）+ 4 个 M→R（main 推 renderer）。
 
 | 通道名 | 方向 | 参数 | 返回值 | 所属 | 前端API |
 |--------|------|------|--------|------|---------|
@@ -220,12 +220,10 @@ Electron 桌面模式下通过 `ipcRenderer.invoke` 通信；纯前端开发模�
 
 ## 4. 全局布局
 
-`App.vue` 实现标准 Mercury 3栏布局:
+`App.vue` 实现标准 Vibe Reader 3 栏布局（v0.2.5 起移除顶部 Header 栏，回收垂直空间）:
 
 ```
-┌──────────────────────────────────────────┐
-│  Header (Vibe Reader + controls)  │
-├────────┬────────────────┬────────────────┤
+┌────────┬────────────────┬────────────────┐
 │ Feed   │  Entry List    │  Detail Pane   │
 │ Sidebar│  (搜索+列表)    │  (阅读器+AI)   │
 │ (Team A)│ (Team A)       │  (Team B+C)    │
