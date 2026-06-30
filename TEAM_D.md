@@ -161,6 +161,8 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 
 ### 3.1 通道列表 (electronMain.ts → preload.cjs → client.ts)
 
+> 共 37 个：32 个 R→M（renderer 调 main）+ 5 个 M→R（main 推 renderer）。
+
 | 通道名 | 方向 | 参数 | 返回值 | 所属 | 前端API |
 |--------|------|------|--------|------|---------|
 | `feed:list` | R→M | - | `FeedItem[]` | A | `teamAApi` |
@@ -169,6 +171,7 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 | `feed:sync` | R→M | `{feedId}` | `SyncResponse` | A | `teamAApi` |
 | `feed:syncAll` | R→M | - | `Array<{feedId,newEntryCount}>` | A | `teamAApi` |
 | `entry:list` | R→M | `{feedId?,q?}` | `EntryItem[]` | A | `teamAApi` |
+| `entry:updateState` | R→M | `{entryId,isRead?,isFavorite?}` | `void` | A | `teamAApi`（v0.2.7 新增） |
 | `opml:import` | R→M | `{content}` | `{imported,failed}` | A | `teamAApi` |
 | `opml:export` | R→M | - | `string` (OPML XML) | A | `teamAApi` |
 | `opml:openFile` | R→M | - | `{filePath,content}\|null` | A | `teamAApi` |
@@ -197,6 +200,7 @@ CREATE INDEX idx_entry_tags_tag_id ON entry_tags(tag_id);
 | `tags:removeFromEntry` | R→M | `{entryId,tagId}` | `void` | D | `teamBApi` |
 | `tags:getForEntry` | R→M | `{entryId}` | `TagItem[]` | D | `teamBApi` |
 | `app:log` | M→R | `LogEntry` | (事件推送) | D | `teamDApi.onAppLog` |
+| `webview:new-window` | M→R | `{url}` | (打开内嵌浏览窗口) | B | `teamBApi`（v0.2.7 新增） |
 
 ### 3.2 开发模式双通道
 
@@ -280,6 +284,7 @@ npm run dist
 | v0.2.4 | Mac/Win/Linux | Vibe Reader | CI 补 author/email/description（deb 依赖） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.4) |
 | v0.2.5 | Mac/Win/Linux | Vibe Reader | 折叠面板文本适配 + Header 精简（Team A/B/C） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.5) |
 | v0.2.6 | Mac/Win/Linux | Vibe Reader | 作者元数据对齐 + 文档定稿 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.6) |
+| v0.2.7 | Mac/Win/Linux | Vibe Reader | Reader UI 重构 + 已读/未读/收藏 + Translation 测试扩充 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.7) |
 
 ### 6.4 用户安装说明
 

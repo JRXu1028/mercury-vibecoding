@@ -421,7 +421,7 @@ AI 伙伴用代码 + git blame 核对，给出 D 组工作清单：
 | 文件 | 行数 | 内容 | D 组独立 |
 |---|---|---|---|
 | `electron/preload.cjs` | 97 | contextBridge 4 命名空间 | ✅ |
-| `src/electronMain.ts` | 556 | 31 R→M + 4 M→R IPC | ✅ |
+| `src/electronMain.ts` | 574 | 32 R→M + 5 M→R IPC | ✅ |
 | `src/database.ts` | 166 | 10 表 + 迁移 | ✅（Team C 改过 aiResults） |
 | `src/logger.ts` | — | 统一日志 | ✅ |
 | `src/notesService.ts` | — | 笔记 CRUD | ✅ |
@@ -434,10 +434,10 @@ AI 伙伴用代码 + git blame 核对，给出 D 组工作清单：
 ### 8.2 关键数据
 
 - **10 张 SQLite 数据表** + 增量迁移机制
-- **31 个 R→M IPC 通道** + **4 个 M→R 推送**（共 35 个）
+- **32 个 R→M IPC 通道** + **5 个 M→R 推送**（共 37 个）
 - **3 平台并行 CI 构建**（mac/win/linux）
 - **44 个单元测试**，全过
-- **8 个 Release 版本**（v0.1.0 → v0.2.6，其中 v0.2.2-v0.2.4 为 CI 三平台迭代）
+- **9 个 Release 版本**（v0.1.0 → v0.2.7，其中 v0.2.2-v0.2.4 为 CI 三平台迭代）
 
 ### 8.3 文档贡献（9 份）
 
@@ -488,6 +488,7 @@ AI 伙伴用代码 + git blame 核对，给出 D 组工作清单：
 2026-06-24  v0.2.5  折叠面板 + 流式 + 内嵌浏览器导航
 2026-06-25          演示准备启动
 2026-06-26  v0.2.6  作者元数据对齐 + 文档定稿（本文）
+2026-06-29  v0.2.7  Reader UI 重构 + 已读/未读/收藏 + Translation 测试（58/58）
 ```
 
 ---
