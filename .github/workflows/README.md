@@ -35,9 +35,9 @@ GitHub Actions 跑约 8–12 分钟，三平台产物会自动出现在 [Release
 
 | 平台 | 文件 |
 |------|------|
-| macOS arm64 + x64 | `Vibe Reader-x.y.z-arm64.dmg` / `.zip` / `x64.dmg` / `.zip` |
-| Windows x64 | `Vibe Reader Setup x.y.z.exe` |
-| Linux | `Vibe Reader-x.y.z.AppImage` / `.deb` |
+| macOS arm64 | `Vibe.Reader-x.y.z-arm64.dmg` / `.zip` |
+| Windows x64 | `Vibe.Reader.Setup.x.y.z.exe` |
+| Linux x64 | `Vibe.Reader-x.y.z.AppImage` / `vibe-reader_x.y.z_amd64.deb` |
 
 ## 注意事项
 

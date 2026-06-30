@@ -4,7 +4,7 @@
 
 ### 0.1 下载安装
 
-下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.7-arm64.dmg`。
+下载 https://github.com/JRXu1028/mercury-vibecoding/releases/latest 的 `Vibe.Reader-0.2.8-arm64.dmg`。
 
 双击 dmg → 拖入 Applications → 首次启动需右键 → 打开（Gatekeeper）。
 
@@ -146,7 +146,7 @@
   A: 本地优先设计，零配置，单文件部署，跨平台一致。
 
 - **Q: 流式怎么实现的？**
-  A: 后端 `openAIStream.ts` 调 OpenAI-compatible `/chat/completions` with `stream: true`，通过 IPC `ai:summaryChunk` 事件推送给渲染进程。
+  A: 后端 `src/ai/providers/openAIStream.ts` 调 OpenAI-compatible `/chat/completions` with `stream: true`，通过 IPC `ai:summaryChunk` 事件推送给渲染进程。
 
 - **Q: 持久化怎么不丢？**
   A: `aiResultService.ts` 在每个 chunk 完成后写入 `ai_summaries` / `ai_translations` 表，文章切换时通过 `ai:getLatestResults` 读回。

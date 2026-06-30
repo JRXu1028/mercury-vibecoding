@@ -2,7 +2,7 @@
 
 > 本地优先、跨平台、支持 AI 摘要 / 翻译 / 标签的 RSS 阅读器
 
-[![Release](https://img.shields.io/badge/release-v0.2.7-blue)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
+[![Release](https://img.shields.io/badge/release-v0.2.8-blue)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/JRXu1028/mercury-vibecoding/releases/latest)
 [![License](https://img.shields.io/badge/license-course%20project-orange)]()
 [![Tests](https://img.shields.io/badge/tests-58%2F58-brightgreen)]()
@@ -13,7 +13,7 @@
 
 参考项目：https://github.com/neolee/mercury
 
-> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.7**）。仓库保留原项目代号 `mercury-vibecoding`。
+> 应用名 **Vibe Reader**（v0.2.0 起重命名，原 Mercury Vibecoding；当前最新 **v0.2.8**）。仓库保留原项目代号 `mercury-vibecoding`。
 
 ## 核心特性
 
@@ -56,7 +56,7 @@
 | OPML | fast-xml-parser | 导入导出订阅源 |
 | 正文提取 | @mozilla/readability + jsdom | 从网页 HTML 提取正文 |
 | 内容清洗 | DOMPurify + turndown | 清洗 HTML 并转换为 Markdown |
-| Markdown 渲染 | marked + highlight.js | 在阅读器中渲染 Markdown 为富文本 |
+| Markdown 渲染 | marked | 在阅读器中渲染 Markdown 为富文本 |
 | LLM 调用 | 原生 fetch (OpenAI-compatible) | 调用 OpenAI-compatible API |
 | 打包 | electron-builder | 生成 Windows / macOS / Linux 安装包 |
 
@@ -258,7 +258,7 @@ npm run start:desktop
 | 2026-06-16 | Team D | 配置自定义应用图标（`build/icon.png`），版本升至 v0.2.1，重新打包发布。 |
 | 2026-06-17 | Team D | 完成 CI/CD 跨平台工作流：GitHub Actions 三平台并行构建（macOS / Windows / Linux），打 tag 触发自动发 release；配置 `publish: null` 禁用 electron-builder 自动发布；新增 `dist:linux` 脚本与 `author/description` 字段。 |
 | 2026-06-24 | Team A | 完成 v0.2.5：侧栏折叠面板的文本/图标自适应（折叠态不溢出）；删除冗余 Header 栏回收垂直空间。 |
-| 2026-06-24 | Team C | 完成 v0.2.5：流式摘要（SSE 推送，`openAIStream.ts` + `ai:summaryChunk` IPC），不阻塞其他操作；AI 结果持久化（`aiResultService.ts` + `ai:getLatestResults` IPC），切文章/重启不丢失。 |
+| 2026-06-24 | Team C | 完成 v0.2.5：流式摘要（SSE 推送，`src/ai/providers/openAIStream.ts` + `ai:summaryChunk` IPC），不阻塞其他操作；AI 结果持久化（`src/aiResultService.ts` + `ai:getLatestResults` IPC），切文章/重启不丢失。 |
 | 2026-06-24 | Team B | 完成 v0.2.5：内嵌浏览器支持前进/后退/刷新（webContents 导航栈），不再弹外部应用。 |
 | 2026-06-24 | Team D | 合并上述改动，bump 至 v0.2.5，CI 自动三平台构建 + 发布 Release。 |
 | 2026-06-26 | Team B | 修复了应用内嵌浏览器链接弹新窗口、网页清洗后 Markdown 图片与块级链接渲染异常、以及 entry 卡片格式问题。 |

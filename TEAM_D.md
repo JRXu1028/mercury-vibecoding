@@ -285,6 +285,7 @@ npm run dist
 | v0.2.5 | Mac/Win/Linux | Vibe Reader | 折叠面板文本适配 + Header 精简（Team A/B/C） | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.5) |
 | v0.2.6 | Mac/Win/Linux | Vibe Reader | 作者元数据对齐 + 文档定稿 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.6) |
 | v0.2.7 | Mac/Win/Linux | Vibe Reader | Reader UI 重构 + 已读/未读/收藏 + Translation 测试扩充 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.7) |
+| v0.2.8 | Mac/Win/Linux | Vibe Reader | 深度文档审计 + 清理 pptx 二进制 | [Release](https://github.com/JRXu1028/mercury-vibecoding/releases/tag/v0.2.8) |
 
 ### 6.4 用户安装说明
 

@@ -99,7 +99,7 @@ Team C 依赖以下持久化能力：
 
 关键实现点包括：
 
-- `openAIStream.ts`：统一处理流式输出
+- `src/ai/providers/openAIStream.ts`：统一处理流式输出
 - `summaryAgentStream` / 进度回调：把生成过程实时推送到前端
 - `aiResultService.ts`：负责摘要与翻译结果的持久化
 - `ai:getLatestResults` / `ai:summaryChunk` / `ai:translationSegment`：支撑状态恢复与实时展示

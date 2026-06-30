@@ -73,7 +73,7 @@ Vibe Reader 的阅读体验不只是一篇文章的展示，而是“看完文�
 
 这一阶段的实现主要围绕三条链路展开：
 
-- `openAIStream.ts`：统一处理流式文本输出
+- `src/ai/providers/openAIStream.ts`：统一处理流式文本输出
 - `summaryAgentStream` / `translationAgent` 的进度回调：把生成过程实时推送到前端
 - `aiResultService.ts`：把摘要和翻译结果写入数据库，确保状态跨文章和跨会话可恢复
 

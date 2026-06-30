@@ -6,9 +6,9 @@
 
 | 平台 | 下载文件 | 架构 |
 |------|----------|------|
-| macOS | `Vibe.Reader-0.2.7-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
-| Windows | `Vibe.Reader.Setup.0.2.7.exe` | x64 |
-| Linux | `Vibe.Reader-0.2.7.AppImage` 或 `vibe-reader_0.2.7_amd64.deb` | x64 |
+| macOS | `Vibe.Reader-0.2.8-arm64.dmg` 或 `.zip` | Apple Silicon (M1/M2/M3/M4) |
+| Windows | `Vibe.Reader.Setup.0.2.8.exe` | x64 |
+| Linux | `Vibe.Reader-0.2.8.AppImage` 或 `vibe-reader_0.2.8_amd64.deb` | x64 |
 
 > Intel Mac 用户：当前仅提供 arm64 版本。如需 Intel 版本，请在 Intel Mac 上 `git clone` 后执行 `npm install && npm run dist`。
 >
